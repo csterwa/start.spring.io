@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,21 +28,23 @@ import io.spring.initializr.generator.spring.build.BuildCustomizer;
  */
 abstract class AbstractGrpcGradleBuildCustomizer implements BuildCustomizer<GradleBuild> {
 
-	private static final String GRPC_PLUGIN_VERSION = "0.9.4";
+	private final String pluginVersion;
 
 	private final char quote;
 
-	AbstractGrpcGradleBuildCustomizer(char quote) {
+	AbstractGrpcGradleBuildCustomizer(char quote, String pluginVersion) {
+		this.pluginVersion = pluginVersion;
 		this.quote = quote;
 	}
 
 	@Override
 	public void customize(GradleBuild build) {
-		build.plugins().add("com.google.protobuf", (plugin) -> plugin.setVersion(GRPC_PLUGIN_VERSION));
+		build.plugins().add("com.google.protobuf", (plugin) -> plugin.setVersion(this.pluginVersion));
 		customizeExtensions(build.extensions());
 	}
 
-	protected abstract void customizeExtensions(GradleExtensionContainer extensions);
+	protected void customizeExtensions(GradleExtensionContainer extensions) {
+	}
 
 	protected String quote(String value) {
 		return this.quote + value + this.quote;

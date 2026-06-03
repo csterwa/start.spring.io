@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ class SpringRestDocsGradleKotlinBuildCustomizerTests {
 		this.customizer.customize(build);
 		assertThat(build.plugins().values()).singleElement().satisfies((plugin) -> {
 			assertThat(plugin.getId()).isEqualTo("org.asciidoctor.jvm.convert");
-			assertThat(((StandardGradlePlugin) plugin).getVersion()).isEqualTo("3.3.2");
+			assertThat(((StandardGradlePlugin) plugin).getVersion()).isEqualTo("4.0.5");
 		});
 		assertThat(build.properties().values()).contains(entry("snippetsDir", "file(\"build/generated-snippets\")"));
 		GradleTask testTask = build.tasks().get("test");

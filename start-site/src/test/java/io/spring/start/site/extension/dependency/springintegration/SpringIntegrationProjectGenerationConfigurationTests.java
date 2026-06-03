@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,13 @@ import io.spring.initializr.generator.test.io.TextAssert;
 import io.spring.initializr.generator.test.project.ProjectStructure;
 import io.spring.initializr.metadata.Dependency;
 import io.spring.initializr.web.project.ProjectRequest;
+import io.spring.start.site.SupportedBootVersion;
 import io.spring.start.site.extension.AbstractExtensionTests;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -44,7 +46,7 @@ class SpringIntegrationProjectGenerationConfigurationTests extends AbstractExten
 	void buildWithOnlySpringIntegration() {
 		Dependency integrationTest = integrationDependency("test");
 		integrationTest.setScope(Dependency.SCOPE_TEST);
-		assertThat(generateProject("integration")).mavenBuild()
+		assertThat(generateProject(SupportedBootVersion.V4_0, "integration")).mavenBuild()
 			.hasDependency(getDependency("integration"))
 			.hasDependency(Dependency.createSpringBootStarter("test", Dependency.SCOPE_TEST))
 			.hasDependency(integrationTest);
@@ -52,10 +54,18 @@ class SpringIntegrationProjectGenerationConfigurationTests extends AbstractExten
 
 	@ParameterizedTest
 	@MethodSource("supportedEntries")
-	void buildWithSupportedEntries(String springBootDependencyId, String integrationModuleId) {
-		assertThat(generateProject("integration", springBootDependencyId)).mavenBuild()
+	void buildWithSupportedEntriesForBoot35(String springBootDependencyId, String integrationModuleId) {
+		assertThat(generateProject(SupportedBootVersion.V3_5, "integration", springBootDependencyId)).mavenBuild()
 			.hasDependency(getDependency("integration"))
 			.hasDependency(Dependency.createSpringBootStarter("test", Dependency.SCOPE_TEST))
+			.hasDependency(integrationDependency(integrationModuleId));
+	}
+
+	@ParameterizedTest
+	@MethodSource("supportedEntries")
+	void buildWithSupportedEntriesForBoot4(String springBootDependencyId, String integrationModuleId) {
+		assertThat(generateProject(SupportedBootVersion.V4_0, "integration", springBootDependencyId)).mavenBuild()
+			.hasDependency(getDependency("integration"))
 			.hasDependency(integrationDependency(integrationModuleId));
 	}
 
@@ -108,10 +118,27 @@ class SpringIntegrationProjectGenerationConfigurationTests extends AbstractExten
 
 	@Test
 	void securityAddsSpringSecurityMessaging() {
-		assertThat(generateProject("integration", "security")).mavenBuild()
+		assertThat(generateProject(SupportedBootVersion.V4_0, "integration", "security")).mavenBuild()
 			.hasDependency("org.springframework.security", "spring-security-messaging")
 			.doesNotHaveDependency("org.springframework.integration", "spring-integration-security");
+	}
 
+	@ParameterizedTest
+	@ValueSource(strings = { "spring-grpc-server", "spring-grpc-client" })
+	void grpcAddsSpringIntegrationGrpcOnBoot41(String grpcDependency) {
+		assertThat(generateProject(SupportedBootVersion.V4_1, "integration", grpcDependency)).mavenBuild()
+			.hasDependency("org.springframework.integration", "spring-integration-grpc");
+		assertHelpDocument(SupportedBootVersion.V4_1, "integration", grpcDependency)
+			.contains("https://docs.spring.io/spring-integration/reference/grpc.html");
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "spring-grpc-server", "spring-grpc-client" })
+	void grpcDoesNotAddSpringIntegrationGrpcOnBoot40(String grpcDependency) {
+		assertThat(generateProject(SupportedBootVersion.V4_0, "integration", grpcDependency)).mavenBuild()
+			.doesNotHaveDependency("org.springframework.integration", "spring-integration-grpc");
+		assertHelpDocument(SupportedBootVersion.V4_0, "integration", grpcDependency)
+			.doesNotContain("https://docs.spring.io/spring-integration/reference/grpc.html");
 	}
 
 	private static Dependency integrationDependency(String id) {
@@ -120,14 +147,19 @@ class SpringIntegrationProjectGenerationConfigurationTests extends AbstractExten
 				integrationModule, null, io.spring.initializr.metadata.Dependency.SCOPE_COMPILE);
 	}
 
-	private ProjectStructure generateProject(String... dependencies) {
-		ProjectRequest request = createProjectRequest(dependencies);
+	private ProjectStructure generateProject(SupportedBootVersion bootVersion, String... dependencies) {
+		ProjectRequest request = createProjectRequest(bootVersion, dependencies);
 		request.setType("maven-build");
 		return generateProject(request);
 	}
 
 	private TextAssert assertHelpDocument(String... dependencyIds) {
 		ProjectRequest request = createProjectRequest(dependencyIds);
+		return assertThat(helpDocument(request));
+	}
+
+	private TextAssert assertHelpDocument(SupportedBootVersion bootVersion, String... dependencyIds) {
+		ProjectRequest request = createProjectRequest(bootVersion, dependencyIds);
 		return assertThat(helpDocument(request));
 	}
 

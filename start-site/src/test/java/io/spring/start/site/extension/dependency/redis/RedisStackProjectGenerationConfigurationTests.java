@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class RedisStackProjectGenerationConfigurationTests extends AbstractExtensionTests {
 
-	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.latest();
+	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.V3_5;
 
 	@Test
 	void doesNothingWithoutDockerCompose() {
@@ -45,6 +45,13 @@ class RedisStackProjectGenerationConfigurationTests extends AbstractExtensionTes
 	@Test
 	void createsRedisStackService() {
 		ProjectRequest request = createProjectRequest(BOOT_VERSION, "docker-compose", "spring-ai-vectordb-redis");
+		assertThat(composeFile(request)).hasSameContentAs(new ClassPathResource("compose/redis-stack.yaml"));
+	}
+
+	@Test
+	void createsRedisStackServiceWithChatMemory() {
+		ProjectRequest request = createProjectRequest(SupportedBootVersion.V4_0, "docker-compose",
+				"spring-ai-chat-memory-repository-redis");
 		assertThat(composeFile(request)).hasSameContentAs(new ClassPathResource("compose/redis-stack.yaml"));
 	}
 

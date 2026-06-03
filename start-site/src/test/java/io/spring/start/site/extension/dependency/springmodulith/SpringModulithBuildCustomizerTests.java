@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for {@link SpringModulithBuildCustomizer}.
  *
  * @author Oliver Drotbohm
+ * @author Eddú Meléndez
  */
 class SpringModulithBuildCustomizerTests extends AbstractExtensionTests {
 
@@ -54,6 +55,13 @@ class SpringModulithBuildCustomizerTests extends AbstractExtensionTests {
 		assertThat(build.dependencies().ids()).contains("modulith-actuator");
 	}
 
+	@Test
+	void registersRuntimeIfFlywayIsPresent() {
+		Build build = createBuild("modulith", "flyway");
+		this.customizer.customize(build);
+		assertThat(build.dependencies().ids()).contains("modulith-runtime");
+	}
+
 	@ParameterizedTest
 	@ValueSource(strings = { "actuator", "datadog", "graphite", "influx", "new-relic", "otlp-metrics", "prometheus",
 			"wavefront", "zipkin" })
@@ -65,7 +73,7 @@ class SpringModulithBuildCustomizerTests extends AbstractExtensionTests {
 	}
 
 	@ParameterizedTest
-	@ValueSource(strings = { "jdbc", "jpa", "mongodb" })
+	@ValueSource(strings = { "jdbc", "jpa", "mongodb", "neo4j" })
 	void presenceOfSpringDataModuleAddsModuleEventStarter(String store) {
 		Build build = createBuild("modulith");
 		build.dependencies().add("data-" + store);

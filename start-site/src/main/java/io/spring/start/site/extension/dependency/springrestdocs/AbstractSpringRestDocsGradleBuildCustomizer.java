@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import io.spring.initializr.generator.spring.build.BuildCustomizer;
 
 /**
  * Abstract {@link BuildCustomizer Customizer} for a {@link GradleBuild} when the
- * generated project * depends on Spring REST Docs.
+ * generated project depends on Spring REST Docs.
  *
  * @author Moritz Halbritter
  */
@@ -29,7 +29,7 @@ abstract class AbstractSpringRestDocsGradleBuildCustomizer implements BuildCusto
 
 	@Override
 	public void customize(GradleBuild build) {
-		build.plugins().add("org.asciidoctor.jvm.convert", (plugin) -> plugin.setVersion("3.3.2"));
+		build.plugins().add("org.asciidoctor.jvm.convert", (plugin) -> plugin.setVersion("4.0.5"));
 		build.properties().property("snippetsDir", "file(\"build/generated-snippets\")");
 		customizeForDialect(build);
 	}

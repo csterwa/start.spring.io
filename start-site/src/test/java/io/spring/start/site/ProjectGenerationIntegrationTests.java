@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,8 @@ import io.spring.initializr.web.project.WebProjectRequest;
 import io.spring.start.testsupport.Homes;
 import io.spring.start.testsupport.TemporaryFiles;
 import org.apache.commons.lang3.SystemUtils;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.parallel.Execution;
@@ -73,6 +75,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Execution(ExecutionMode.CONCURRENT)
 class ProjectGenerationIntegrationTests {
 
+	private static final boolean FORCE_REFRESH_DEPENDENCIES = false;
+
 	private final ProjectGenerationInvoker<ProjectRequest> invoker;
 
 	private final InitializrMetadata metadata;
@@ -82,6 +86,11 @@ class ProjectGenerationIntegrationTests {
 		this.invoker = new ProjectGenerationInvoker<>(applicationContext,
 				new DefaultProjectRequestToDescriptionConverter());
 		this.metadata = metadataProvider.get();
+	}
+
+	@BeforeEach
+	void setUp(TestInfo testInfo) {
+		System.out.printf("Running ProjectGenerationIntegrationTests (%s)%n", testInfo.getDisplayName());
 	}
 
 	Stream<Arguments> parameters() {
@@ -129,6 +138,7 @@ class ProjectGenerationIntegrationTests {
 		request.setArtifactId("demo");
 		request.setApplicationName("DemoApplication");
 		request.setDependencies(Arrays.asList("devtools", "configuration-processor"));
+		request.setConfigurationFileFormat("properties");
 		Path project = this.invoker.invokeProjectStructureGeneration(request).getRootDirectory();
 		Path home = getHome(buildSystem);
 		ProcessBuilder processBuilder = createProcessBuilder(project, buildSystem, home);
@@ -150,22 +160,42 @@ class ProjectGenerationIntegrationTests {
 
 	private ProcessBuilder createProcessBuilder(Path directory, BuildSystem buildSystem, Path home) {
 		if (buildSystem.id().equals(MavenBuildSystem.ID)) {
-			String command = (isWindows()) ? "mvnw.cmd" : "mvnw";
-			ProcessBuilder processBuilder = new ProcessBuilder(directory.resolve(command).toAbsolutePath().toString(),
-					"-Dmaven.repo.local=" + home.resolve("repository").toAbsolutePath(), "package");
-			processBuilder.environment().put("MAVEN_USER_HOME", home.toAbsolutePath().toString());
-			processBuilder.directory(directory.toFile());
-			return processBuilder;
+			return createMavenProcessBuilder(directory, home);
 		}
 		if (buildSystem.id().equals(GradleBuildSystem.ID)) {
-			String command = (isWindows()) ? "gradlew.bat" : "gradlew";
-			ProcessBuilder processBuilder = new ProcessBuilder(directory.resolve(command).toAbsolutePath().toString(),
-					"--no-daemon", "build");
-			processBuilder.environment().put("GRADLE_USER_HOME", home.toAbsolutePath().toString());
-			processBuilder.directory(directory.toFile());
-			return processBuilder;
+			return createGradleProcessBuilder(directory, home);
 		}
 		throw new IllegalStateException("Unknown build system '%s'".formatted(buildSystem.id()));
+	}
+
+	private ProcessBuilder createGradleProcessBuilder(Path directory, Path home) {
+		String executable = (isWindows()) ? "gradlew.bat" : "gradlew";
+		List<String> command = new ArrayList<>();
+		command.add(directory.resolve(executable).toAbsolutePath().toString());
+		command.add("--no-daemon");
+		if (FORCE_REFRESH_DEPENDENCIES) {
+			command.add("--refresh-dependencies");
+		}
+		command.add("build");
+		ProcessBuilder processBuilder = new ProcessBuilder(command);
+		processBuilder.environment().put("GRADLE_USER_HOME", home.toAbsolutePath().toString());
+		processBuilder.directory(directory.toFile());
+		return processBuilder;
+	}
+
+	private ProcessBuilder createMavenProcessBuilder(Path directory, Path home) {
+		String executable = (isWindows()) ? "mvnw.cmd" : "mvnw";
+		List<String> command = new ArrayList<>();
+		command.add(directory.resolve(executable).toAbsolutePath().toString());
+		command.add("-Dmaven.repo.local=" + home.resolve("repository").toAbsolutePath());
+		if (FORCE_REFRESH_DEPENDENCIES) {
+			command.add("--update-snapshots");
+		}
+		command.add("package");
+		ProcessBuilder processBuilder = new ProcessBuilder(command);
+		processBuilder.environment().put("MAVEN_USER_HOME", home.toAbsolutePath().toString());
+		processBuilder.directory(directory.toFile());
+		return processBuilder;
 	}
 
 	private boolean isWindows() {

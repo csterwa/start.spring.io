@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,18 @@ package io.spring.start.site.extension.dependency.graalvm;
 import io.spring.initializr.generator.buildsystem.gradle.GradleBuild;
 import io.spring.initializr.generator.spring.build.BuildCustomizer;
 import io.spring.initializr.generator.version.Version;
+import io.spring.initializr.generator.version.VersionParser;
+import io.spring.initializr.generator.version.VersionRange;
 
 /**
  * A {@link BuildCustomizer} for projects using the Groovy DSL with GraalVm and Hibernate.
  *
  * @author Stephane Nicoll
+ * @author Taewoong Kim
  */
 class HibernatePluginGradleBuildCustomizer implements BuildCustomizer<GradleBuild> {
+
+	private static final VersionRange HIBERNATE_7_1_OR_LATER = VersionParser.DEFAULT.parseRange("7.1.0");
 
 	private final Version hibernateVersion;
 
@@ -36,9 +41,15 @@ class HibernatePluginGradleBuildCustomizer implements BuildCustomizer<GradleBuil
 	@Override
 	public void customize(GradleBuild build) {
 		build.plugins().add("org.hibernate.orm", (plugin) -> plugin.setVersion(this.hibernateVersion.toString()));
-		build.extensions()
-			.customize("hibernate", (hibernate) -> hibernate.nested("enhancement",
-					(enhancement) -> enhancement.attribute("enableAssociationManagement", "true")));
+		build.extensions().customize("hibernate", (hibernate) -> hibernate.nested("enhancement", (enhancement) -> {
+			if (!isAssociationManagementDeprecated()) {
+				enhancement.attribute("enableAssociationManagement", "true");
+			}
+		}));
+	}
+
+	private boolean isAssociationManagementDeprecated() {
+		return HIBERNATE_7_1_OR_LATER.match(this.hibernateVersion);
 	}
 
 }

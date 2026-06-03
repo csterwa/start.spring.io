@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import io.spring.start.site.container.ComposeFileCustomizer;
 import io.spring.start.site.container.DockerServiceResolver;
 import io.spring.start.site.container.ServiceConnections.ServiceConnection;
 import io.spring.start.site.container.ServiceConnectionsCustomizer;
+import io.spring.start.site.container.Testcontainers;
+import io.spring.start.site.container.Testcontainers.Container;
+import io.spring.start.site.container.Testcontainers.SupportedContainer;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,13 +38,14 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnRequestedDependency("postgresql")
 class PostgresqlProjectGenerationConfiguration {
 
-	private static final String TESTCONTAINERS_CLASS_NAME = "org.testcontainers.containers.PostgreSQLContainer";
-
 	@Bean
 	@ConditionalOnRequestedDependency("testcontainers")
-	ServiceConnectionsCustomizer postgresqlServiceConnectionsCustomizer(DockerServiceResolver serviceResolver) {
-		return (serviceConnections) -> serviceResolver.doWith("postgres", (service) -> serviceConnections
-			.addServiceConnection(ServiceConnection.ofContainer("postgres", service, TESTCONTAINERS_CLASS_NAME)));
+	ServiceConnectionsCustomizer postgresqlServiceConnectionsCustomizer(DockerServiceResolver serviceResolver,
+			Testcontainers testcontainers) {
+		Container container = testcontainers.getContainer(SupportedContainer.POSTGRESQL);
+		return (serviceConnections) -> serviceResolver
+			.doWith("postgres", (service) -> serviceConnections.addServiceConnection(
+					ServiceConnection.ofContainer("postgres", service, container.className(), container.generic())));
 	}
 
 	@Bean

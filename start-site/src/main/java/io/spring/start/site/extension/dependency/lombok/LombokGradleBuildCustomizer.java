@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,11 @@ import io.spring.initializr.metadata.InitializrMetadata;
 
 /**
  * Complete the setup for Lombok with Gradle by adding Lombok with {@code compileOnly}
- * scope as well.
+ * scope. It also adds Lombok as a test annotation processor and as a dependency with
+ * {@code testCompileOnly} scope as well.
  *
  * @author Stephane Nicoll
+ * @author Moritz Halbritter
  */
 public class LombokGradleBuildCustomizer implements BuildCustomizer<GradleBuild> {
 
@@ -41,6 +43,12 @@ public class LombokGradleBuildCustomizer implements BuildCustomizer<GradleBuild>
 		Dependency lombok = this.metadata.getDependencies().get("lombok");
 		build.dependencies()
 			.add("lombok-compileOnly", lombok.getGroupId(), lombok.getArtifactId(), DependencyScope.COMPILE_ONLY);
+		build.dependencies()
+			.add("lombok-testAnnotationProcessor", lombok.getGroupId(), lombok.getArtifactId(),
+					DependencyScope.TEST_ANNOTATION_PROCESSOR);
+		build.dependencies()
+			.add("lombok-testCompileOnly", lombok.getGroupId(), lombok.getArtifactId(),
+					DependencyScope.TEST_COMPILE_ONLY);
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ import io.spring.start.site.container.ComposeFileCustomizer;
 import io.spring.start.site.container.DockerServiceResolver;
 import io.spring.start.site.container.ServiceConnections.ServiceConnection;
 import io.spring.start.site.container.ServiceConnectionsCustomizer;
+import io.spring.start.site.container.Testcontainers;
+import io.spring.start.site.container.Testcontainers.Container;
+import io.spring.start.site.container.Testcontainers.SupportedContainer;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,20 +34,20 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Moritz Halbritter
  * @author Stephane Nicoll
+ * @author Eddú Meléndez
  */
 @Configuration(proxyBeanMethods = false)
 class MongoDbProjectGenerationConfiguration {
 
-	private static final String TESTCONTAINERS_CLASS_NAME = "org.testcontainers.containers.MongoDBContainer";
-
 	@Bean
 	@ConditionalOnRequestedDependency("testcontainers")
-	ServiceConnectionsCustomizer mongoDbServiceConnectionsCustomizer(Build build,
-			DockerServiceResolver serviceResolver) {
+	ServiceConnectionsCustomizer mongoDbServiceConnectionsCustomizer(Build build, DockerServiceResolver serviceResolver,
+			Testcontainers testcontainers) {
 		return (serviceConnections) -> {
 			if (isMongoEnabled(build)) {
+				Container container = testcontainers.getContainer(SupportedContainer.MONGODB);
 				serviceResolver.doWith("mongoDb", (service) -> serviceConnections.addServiceConnection(
-						ServiceConnection.ofContainer("mongoDb", service, TESTCONTAINERS_CLASS_NAME, false)));
+						ServiceConnection.ofContainer("mongoDb", service, container.className(), container.generic())));
 			}
 		};
 	}
@@ -64,7 +67,9 @@ class MongoDbProjectGenerationConfiguration {
 	}
 
 	private boolean isMongoEnabled(Build build) {
-		return build.dependencies().has("data-mongodb") || build.dependencies().has("data-mongodb-reactive");
+		return build.dependencies().has("mongodb") || build.dependencies().has("data-mongodb")
+				|| build.dependencies().has("data-mongodb-reactive") || build.dependencies().has("session-data-mongodb")
+				|| build.dependencies().has("spring-ai-chat-memory-repository-mongodb");
 	}
 
 }

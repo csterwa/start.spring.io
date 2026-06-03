@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package io.spring.start.site.extension.dependency.springgrpc;
 
-import io.spring.initializr.metadata.Dependency;
 import io.spring.initializr.web.project.ProjectRequest;
+import io.spring.start.site.SupportedBootVersion;
 import io.spring.start.site.extension.AbstractExtensionTests;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,164 +32,47 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SpringGrpcProjectGenerationConfigurationTests extends AbstractExtensionTests {
 
-	private static final String SPRING_GRPC = "spring-grpc";
+	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.V4_1;
 
 	@Test
 	void shouldDoNothingIfSpringGrpcIsntSelected() {
 		ProjectRequest request = createProjectRequest("web");
-		assertThat(mavenPom(request)).doesNotHaveDependency("io.grpc", "grpc-services")
-			.doesNotHaveDependency("org.springframework.grpc", "spring-grpc-test")
-			.doesNotContain("os-maven-plugin")
-			.doesNotContain("protobuf-maven-plugin")
-			.doesNotHaveProperty("grpc.version")
-			.doesNotHaveProperty("protobuf-java.version");
 		assertThat(generateProject(request)).doesNotContainDirectories("src/main/proto");
 	}
 
-	@Test
-	void shouldAddAdditionalDependenciesForMaven() {
-		ProjectRequest request = createProjectRequest(SPRING_GRPC);
-		assertThat(mavenPom(request)).hasDependency("io.grpc", "grpc-services", null, Dependency.SCOPE_COMPILE)
-			.hasDependency("org.springframework.grpc", "spring-grpc-test", null, Dependency.SCOPE_TEST);
-	}
-
-	@Test
-	void shouldAddAdditionalDependenciesForGradle() {
-		ProjectRequest request = createProjectRequest(SPRING_GRPC);
+	@ParameterizedTest
+	@ValueSource(strings = { "spring-grpc-server", "spring-grpc-client" })
+	void shouldAddGrpcPluginForGradleGroovy(String entry) {
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, entry);
 		request.setType("gradle-project");
-		assertThat(gradleBuild(request)).contains("implementation 'io.grpc:grpc-services'")
-			.contains("testImplementation 'org.springframework.grpc:spring-grpc-test'");
+		assertThat(gradleBuild(request)).hasPlugin("com.google.protobuf", "0.9.6");
 	}
 
-	@Test
-	void shouldAddGrpcPluginAndConfigurationForGradleGroovy() {
-		ProjectRequest request = createProjectRequest(SPRING_GRPC);
-		request.setType("gradle-project");
-		assertThat(gradleBuild(request)).hasPlugin("com.google.protobuf", "0.9.4").containsIgnoringWhitespaces("""
-				protobuf {
-					protoc {
-						artifact = 'com.google.protobuf:protoc'
-					}
-					plugins {
-						grpc {
-							artifact = 'io.grpc:protoc-gen-grpc-java'
-						}
-					}
-					generateProtoTasks {
-						all()*.plugins {
-							grpc {
-								option 'jakarta_omit'
-								option '@generated=omit'
-							}
-						}
-					}
-				}
-				""");
-	}
-
-	@Test
-	void shouldAddGrpcPluginAndConfigurationForGradleKotlin() {
-		ProjectRequest request = createProjectRequest(SPRING_GRPC);
+	@ParameterizedTest
+	@ValueSource(strings = { "spring-grpc-server", "spring-grpc-client" })
+	void shouldAddGrpcPluginForGradleKotlin(String entry) {
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, entry);
 		request.setType("gradle-project-kotlin");
-		assertThat(gradleKotlinDslBuild(request)).hasPlugin("com.google.protobuf", "0.9.4")
-			.contains("import com.google.protobuf.gradle.id")
-			.containsIgnoringWhitespaces("""
-					protobuf {
-						protoc {
-							artifact = "com.google.protobuf:protoc"
-						}
-						plugins {
-							id("grpc") {
-								artifact = "io.grpc:protoc-gen-grpc-java"
-							}
-						}
-						generateProtoTasks {
-							all().forEach {
-								it.plugins {
-									id("grpc") {
-										option("jakarta_omit")
-										option("@generated=omit")
-									}
-								}
-							}
-						}
-					}
-					""");
+		assertThat(gradleKotlinDslBuild(request)).hasPlugin("com.google.protobuf", "0.9.6");
 	}
 
-	@Test
-	void shouldAddOsPluginForMaven() {
-		ProjectRequest request = createProjectRequest(SPRING_GRPC);
+	@ParameterizedTest
+	@ValueSource(strings = { "spring-grpc-server", "spring-grpc-client" })
+	void shouldAddProtobufPluginForMaven(String entry) {
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, entry);
 		assertThat(mavenPom(request)).containsIgnoringWhitespaces("""
 				<plugin>
-					<groupId>kr.motd.maven</groupId>
-					<artifactId>os-maven-plugin</artifactId>
-					<version>1.7.1</version>
-					<executions>
-						<execution>
-							<id>initialize</id>
-							<phase>initialize</phase>
-							<goals>
-								<goal>detect</goal>
-							</goals>
-						</execution>
-					</executions>
+					<groupId>io.github.ascopes</groupId>
+					<artifactId>protobuf-maven-plugin</artifactId>
 				</plugin>
 				""");
 	}
 
-	@Test
-	void shouldAddProtobufPluginForMaven() {
-		ProjectRequest request = createProjectRequest(SPRING_GRPC);
-		assertThat(mavenPom(request)).hasProperty("grpc.version", "1.72.0")
-			.hasProperty("protobuf-java.version", "4.30.2")
-			.containsIgnoringWhitespaces(
-					"""
-							<plugin>
-								<groupId>org.xolstice.maven.plugins</groupId>
-								<artifactId>protobuf-maven-plugin</artifactId>
-								<version>0.6.1</version>
-								<configuration>
-									<protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}</protocArtifact>
-									<pluginId>grpc-java</pluginId>
-									<pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
-								</configuration>
-								<executions>
-									<execution>
-										<id>compile</id>
-										<goals>
-											<goal>compile</goal>
-											<goal>compile-custom</goal>
-										</goals>
-										<configuration>
-											<pluginParameter>jakarta_omit,@generated=omit</pluginParameter>
-										</configuration>
-									</execution>
-								</executions>
-							</plugin>
-							""");
-	}
-
-	@Test
-	void shouldCreateSrcMainProtoDirectory() {
-		ProjectRequest request = createProjectRequest(SPRING_GRPC);
+	@ParameterizedTest
+	@ValueSource(strings = { "spring-grpc-server", "spring-grpc-client" })
+	void shouldCreateSrcMainProtoDirectory(String entry) {
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, entry);
 		assertThat(generateProject(request)).containsDirectories("src/main/proto");
-	}
-
-	@Test
-	void shouldNotReplaceStarterIfWebMvcIsntSelected() {
-		ProjectRequest request = createProjectRequest(SPRING_GRPC);
-		assertThat(mavenPom(request)).hasDependency("org.springframework.grpc", "spring-grpc-spring-boot-starter", null,
-				Dependency.SCOPE_COMPILE);
-	}
-
-	@Test
-	void shouldReplaceStarterIfWebMvcIsSelected() {
-		ProjectRequest request = createProjectRequest(SPRING_GRPC, "web");
-		assertThat(mavenPom(request))
-			.hasDependency("org.springframework.grpc", "spring-grpc-server-web-spring-boot-starter", null,
-					Dependency.SCOPE_COMPILE)
-			.doesNotHaveDependency("org.springframework.grpc", "spring-grpc-spring-boot-starter");
 	}
 
 }

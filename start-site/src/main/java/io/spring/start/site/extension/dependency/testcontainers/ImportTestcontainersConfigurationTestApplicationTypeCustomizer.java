@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ class ImportTestcontainersConfigurationTestApplicationTypeCustomizer
 	@Override
 	public void customize(TypeDeclaration typeDeclaration) {
 		typeDeclaration.annotations()
-			.add(ClassName.of("org.springframework.context.annotation.Import"), (annotation) -> annotation.set("value",
-					TestContainersApplicationCodeProjectContributor.TESTCONTAINERS_CONFIGURATION_CLASS_NAME));
+			.addSingle(ClassName.of("org.springframework.context.annotation.Import"), (annotation) -> annotation
+				.set("value", TestContainersApplicationCodeProjectContributor.TESTCONTAINERS_CONFIGURATION_CLASS_NAME));
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,23 +33,38 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class Neo4jProjectGenerationConfigurationTests extends AbstractExtensionTests {
 
+	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.latest();
+
 	@Test
 	void doesNothingWithoutDockerCompose() {
-		ProjectRequest request = createProjectRequest("web", "data-neo4j");
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, "web", "data-neo4j");
 		ProjectStructure structure = generateProject(request);
 		assertThat(structure.getProjectDirectory().resolve("compose.yaml")).doesNotExist();
 	}
 
 	@Test
 	void createsNeo4jService() {
-		ProjectRequest request = createProjectRequest("docker-compose", "data-neo4j");
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, "docker-compose", "data-neo4j");
+		assertThat(composeFile(request)).hasSameContentAs(new ClassPathResource("compose/neo4j.yaml"));
+	}
+
+	@Test
+	void createsNeo4jServiceWhenDriverIsSelected() {
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, "docker-compose", "neo4j");
 		assertThat(composeFile(request)).hasSameContentAs(new ClassPathResource("compose/neo4j.yaml"));
 	}
 
 	@Test
 	void createsNeo4jServiceWhenSpringAiModuleIsSelected() {
-		ProjectRequest request = createProjectRequest(SupportedBootVersion.latest(), "docker-compose",
+		ProjectRequest request = createProjectRequest(SupportedBootVersion.V3_5, "docker-compose",
 				"spring-ai-vectordb-neo4j");
+		assertThat(composeFile(request)).hasSameContentAs(new ClassPathResource("compose/neo4j.yaml"));
+	}
+
+	@Test
+	void createsNeo4jServiceWhenSpringAiChatMemoryModuleIsSelected() {
+		ProjectRequest request = createProjectRequest(SupportedBootVersion.V3_5, "docker-compose",
+				"spring-ai-chat-memory-repository-neo4j");
 		assertThat(composeFile(request)).hasSameContentAs(new ClassPathResource("compose/neo4j.yaml"));
 	}
 

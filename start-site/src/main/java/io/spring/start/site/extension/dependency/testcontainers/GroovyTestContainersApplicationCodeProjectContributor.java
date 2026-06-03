@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@
 package io.spring.start.site.extension.dependency.testcontainers;
 
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.spring.initializr.generator.container.docker.compose.PortMapping;
 import io.spring.initializr.generator.io.IndentingWriterFactory;
 import io.spring.initializr.generator.language.CodeBlock;
 import io.spring.initializr.generator.language.Parameter;
@@ -32,6 +33,7 @@ import io.spring.initializr.generator.project.ProjectDescription;
 import io.spring.start.site.container.DockerService;
 import io.spring.start.site.container.ServiceConnections;
 import io.spring.start.site.container.ServiceConnections.ServiceConnection;
+import io.spring.start.site.container.Testcontainers;
 import org.codehaus.plexus.util.StringUtils;
 
 import org.springframework.boot.SpringApplication;
@@ -40,6 +42,7 @@ import org.springframework.boot.SpringApplication;
  * {@link TestContainersApplicationCodeProjectContributor} implementation for Groovy.
  *
  * @author Stephane Nicoll
+ * @author Kaique Vieira Soares
  */
 class GroovyTestContainersApplicationCodeProjectContributor extends
 		TestContainersApplicationCodeProjectContributor<GroovyTypeDeclaration, GroovyCompilationUnit, GroovySourceCode> {
@@ -71,35 +74,37 @@ class GroovyTestContainersApplicationCodeProjectContributor extends
 		DockerService dockerService = serviceConnection.dockerService();
 		String imageId = "%s:%s".formatted(dockerService.getImage(), dockerService.getImageTag());
 		if (serviceConnection.isGenericContainer()) {
-			typeDeclaration.addMethodDeclaration(usingGenericContainer(methodName, imageId,
-					serviceConnection.connectionName(), dockerService.getPorts()));
+			typeDeclaration.addMethodDeclaration(
+					usingGenericContainer(methodName, imageId, serviceConnection, dockerService.getPorts()));
 		}
 		else {
-			typeDeclaration.addMethodDeclaration(usingSpecificContainer(methodName, imageId,
-					serviceConnection.containerClassName(), serviceConnection.containerClassNameGeneric()));
+			typeDeclaration.addMethodDeclaration(usingSpecificContainer(methodName, imageId, serviceConnection));
 		}
 
 	}
 
-	private GroovyMethodDeclaration usingGenericContainer(String methodName, String imageId, String connectionName,
-			int... ports) {
-		String portsParameter = Arrays.stream(ports).mapToObj(String::valueOf).collect(Collectors.joining(", "));
+	private GroovyMethodDeclaration usingGenericContainer(String methodName, String imageId,
+			ServiceConnection serviceConnection, Set<PortMapping> ports) {
+		String portsParameter = ports.stream()
+			.map((port) -> String.valueOf(port.getContainerPort()))
+			.collect(Collectors.joining(", "));
 		GroovyMethodDeclaration method = GroovyMethodDeclaration.method(methodName)
 			.returning("GenericContainer")
 			.body(CodeBlock.ofStatement("new $T<>($L).withExposedPorts($L)",
-					"org.testcontainers.containers.GenericContainer", generatedDockerImageNameCode(imageId),
+					Testcontainers.GENERIC_CONTAINER_CLASS_NAME, generatedDockerImageNameCode(imageId),
 					portsParameter));
-		annotateContainerMethod(method, connectionName);
+		annotateContainerMethod(method, serviceConnection);
 		return method;
 	}
 
-	private GroovyMethodDeclaration usingSpecificContainer(String methodName, String imageId, String containerClassName,
-			boolean containerClassNameGeneric) {
-		String statementFormat = containerClassNameGeneric ? "new $T<>($L)" : "new $T($L)";
+	private GroovyMethodDeclaration usingSpecificContainer(String methodName, String imageId,
+			ServiceConnection serviceConnection) {
+		String statementFormat = serviceConnection.containerClassNameGeneric() ? "new $T<>($L)" : "new $T($L)";
 		GroovyMethodDeclaration method = GroovyMethodDeclaration.method(methodName)
-			.returning(containerClassName)
-			.body(CodeBlock.ofStatement(statementFormat, containerClassName, generatedDockerImageNameCode(imageId)));
-		annotateContainerMethod(method, null);
+			.returning(serviceConnection.containerClassName())
+			.body(CodeBlock.ofStatement(statementFormat, serviceConnection.containerClassName(),
+					generatedDockerImageNameCode(imageId)));
+		annotateContainerMethod(method, serviceConnection);
 		return method;
 	}
 

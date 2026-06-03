@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,23 +18,48 @@ package io.spring.start.site.extension.dependency.graalvm;
 
 import io.spring.initializr.generator.buildsystem.maven.MavenBuild;
 import io.spring.initializr.generator.spring.build.BuildCustomizer;
+import io.spring.initializr.generator.version.Version;
+import io.spring.initializr.generator.version.VersionParser;
+import io.spring.initializr.generator.version.VersionRange;
 
 /**
  * A {@link BuildCustomizer} for Maven projects using GraalVm and Hibernate.
  *
  * @author Stephane Nicoll
+ * @author Moritz Halbritter
+ * @author Taewoong Kim
  */
+// See https://docs.hibernate.org/orm/7.1/userguide/html_single/#BytecodeEnhancement
 class HibernatePluginMavenBuildCustomizer implements BuildCustomizer<MavenBuild> {
+
+	private static final VersionRange SPRING_BOOT_4_0_OR_LATER = VersionParser.DEFAULT.parseRange("4.0.0-M1");
+
+	private final Version bootVersion;
+
+	HibernatePluginMavenBuildCustomizer(Version bootVersion) {
+		this.bootVersion = bootVersion;
+	}
 
 	@Override
 	public void customize(MavenBuild build) {
-		build.plugins()
-			.add("org.hibernate.orm.tooling", "hibernate-enhance-maven-plugin",
-					(plugin) -> plugin.version("${hibernate.version}")
-						.execution("enhance", (execution) -> execution.goal("enhance")
-							.configuration((configuration) -> configuration.add("enableLazyInitialization", "true")
-								.add("enableDirtyTracking", "true")
-								.add("enableAssociationManagement", "true"))));
+		if (isSpringBoot4OrLater()) {
+			build.plugins()
+				.add("org.hibernate.orm", "hibernate-maven-plugin", (plugin) -> plugin.version("${hibernate.version}")
+					.execution("enhance", (execution) -> execution.goal("enhance")));
+		}
+		else {
+			build.plugins()
+				.add("org.hibernate.orm.tooling", "hibernate-enhance-maven-plugin",
+						(plugin) -> plugin.version("${hibernate.version}")
+							.execution("enhance", (execution) -> execution.goal("enhance")
+								.configuration((configuration) -> configuration.add("enableLazyInitialization", "true")
+									.add("enableDirtyTracking", "true")
+									.add("enableAssociationManagement", "true"))));
+		}
+	}
+
+	private boolean isSpringBoot4OrLater() {
+		return SPRING_BOOT_4_0_OR_LATER.match(this.bootVersion);
 	}
 
 }

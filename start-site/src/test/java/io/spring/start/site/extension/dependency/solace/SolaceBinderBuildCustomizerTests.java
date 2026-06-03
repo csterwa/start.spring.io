@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SolaceBinderBuildCustomizerTests extends AbstractExtensionTests {
 
-	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.latest();
+	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.V3_5;
 
 	@Test
 	void binderNotAddedWhenSolaceNotSelected() {
@@ -46,7 +46,7 @@ class SolaceBinderBuildCustomizerTests extends AbstractExtensionTests {
 		ProjectRequest request = createProjectRequest(BOOT_VERSION, "solace");
 		ProjectStructure project = generateProject(request);
 		assertNoBinder(project);
-		assertThat(project).mavenBuild().hasDependency(getDependency("solace"));
+		assertThat(project).mavenBuild().hasDependency(getDependency(BOOT_VERSION, "solace"));
 	}
 
 	@Test
@@ -77,7 +77,7 @@ class SolaceBinderBuildCustomizerTests extends AbstractExtensionTests {
 	void solaceStarterRemovedWhenSolaceAndCloudStreamSelected() {
 		ProjectRequest request = createProjectRequest(BOOT_VERSION, "solace", "cloud-stream");
 		ProjectStructure project = generateProject(request);
-		Dependency solace = getDependency("solace");
+		Dependency solace = getDependency(BOOT_VERSION, "solace");
 		assertThat(project).mavenBuild().doesNotHaveDependency(solace.getGroupId(), solace.getArtifactId());
 	}
 

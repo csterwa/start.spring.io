@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.spring.start.site.extension.dependency.jte;
 import io.spring.initializr.generator.test.project.ProjectStructure;
 import io.spring.initializr.metadata.Dependency;
 import io.spring.initializr.web.project.ProjectRequest;
+import io.spring.start.site.SupportedBootVersion;
 import io.spring.start.site.extension.AbstractExtensionTests;
 import org.junit.jupiter.api.Test;
 
@@ -31,18 +32,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class JteProjectGenerationConfigurationTests extends AbstractExtensionTests {
 
-	private final Dependency jte = Dependency.withId("jte", "gg.jte", "jte-spring-boot-starter-3");
+	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.V4_0;
+
+	private final Dependency jte = Dependency.withId("jte", "gg.jte", "jte-spring-boot-starter-4");
 
 	@Test
 	void shouldDoNothingIfJteIsNotSelected() {
-		ProjectRequest request = createProjectRequest("web");
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, "web");
 		assertThat(mavenPom(request)).doesNotHaveDependency(this.jte.getGroupId(), this.jte.getArtifactId());
 		assertThat(mavenPom(request)).doesNotHaveDependency("gg.jte", "jte");
 		ProjectStructure structure = generateProject(request);
 		assertThat(structure).doesNotContainDirectories("src/main/jte");
 		assertThat(applicationProperties(request)).lines().doesNotContain("gg.jte.development-mode=true");
 		assertThat(gitIgnore(request)).lines().doesNotContain("/jte-classes/");
-		assertThat(helpDocument(request)).lines().doesNotContain("## JTE");
+		assertThat(helpDocument(request)).lines().doesNotContain("## jte");
 	}
 
 	@Test
@@ -67,7 +70,7 @@ class JteProjectGenerationConfigurationTests extends AbstractExtensionTests {
 	@Test
 	void shouldAddHelpSection() {
 		ProjectRequest request = createProjectRequest("jte");
-		assertThat(helpDocument(request)).lines().contains("## JTE");
+		assertThat(helpDocument(request)).lines().contains("## jte");
 	}
 
 	@Test

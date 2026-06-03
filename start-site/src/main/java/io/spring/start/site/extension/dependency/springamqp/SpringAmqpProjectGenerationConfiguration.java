@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,48 +16,70 @@
 
 package io.spring.start.site.extension.dependency.springamqp;
 
+import io.spring.initializr.generator.condition.ConditionalOnPlatformVersion;
 import io.spring.initializr.generator.condition.ConditionalOnRequestedDependency;
 import io.spring.initializr.generator.project.ProjectGenerationConfiguration;
 import io.spring.start.site.container.ComposeFileCustomizer;
 import io.spring.start.site.container.DockerServiceResolver;
 import io.spring.start.site.container.ServiceConnections.ServiceConnection;
 import io.spring.start.site.container.ServiceConnectionsCustomizer;
+import io.spring.start.site.container.Testcontainers;
+import io.spring.start.site.container.Testcontainers.Container;
+import io.spring.start.site.container.Testcontainers.SupportedContainer;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * Configuration for generation of projects that depend on Spring AMQP.
  *
  * @author Stephane Nicoll
- * @author Stephane Nicoll
  */
 @ProjectGenerationConfiguration
-@ConditionalOnRequestedDependency("amqp")
 class SpringAmqpProjectGenerationConfiguration {
 
-	private static final String TESTCONTAINERS_CLASS_NAME = "org.testcontainers.containers.RabbitMQContainer";
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnRequestedDependency("amqp")
+	static class AmqpConfiguration {
 
-	@Bean
-	SpringRabbitTestBuildCustomizer springAmqpTestBuildCustomizer() {
-		return new SpringRabbitTestBuildCustomizer();
+		@Bean
+		@ConditionalOnPlatformVersion("[3.5.0,4.0.0-RC1]")
+		SpringRabbitTestBuildCustomizer springAmqpTestBuildCustomizer() {
+			return new SpringRabbitTestBuildCustomizer();
+		}
+
+		@Bean
+		@ConditionalOnRequestedDependency("testcontainers")
+		ServiceConnectionsCustomizer rabbitServiceConnectionsCustomizer(DockerServiceResolver serviceResolver,
+				Testcontainers testcontainers) {
+			Container container = testcontainers.getContainer(SupportedContainer.RABBITMQ);
+			return (serviceConnections) -> serviceResolver
+				.doWith("rabbit", (service) -> serviceConnections.addServiceConnection(
+						ServiceConnection.ofContainer("rabbit", service, container.className(), container.generic())));
+		}
+
+		@Bean
+		@ConditionalOnRequestedDependency("docker-compose")
+		ComposeFileCustomizer rabbitComposeFileCustomizer(DockerServiceResolver serviceResolver) {
+			return (composeFile) -> serviceResolver.doWith("rabbit",
+					(service) -> composeFile.services()
+						.add("rabbitmq",
+								service.andThen((builder) -> builder.environment("RABBITMQ_DEFAULT_USER", "myuser")
+									.environment("RABBITMQ_DEFAULT_PASS", "secret")
+									.ports(5672))));
+		}
+
 	}
 
-	@Bean
-	@ConditionalOnRequestedDependency("testcontainers")
-	ServiceConnectionsCustomizer rabbitServiceConnectionsCustomizer(DockerServiceResolver serviceResolver) {
-		return (serviceConnections) -> serviceResolver.doWith("rabbit", (service) -> serviceConnections
-			.addServiceConnection(ServiceConnection.ofContainer("rabbit", service, TESTCONTAINERS_CLASS_NAME, false)));
-	}
+	@ConditionalOnRequestedDependency("amqp-streams")
+	@Configuration(proxyBeanMethods = false)
+	static class AmqpStreamsConfiguration {
 
-	@Bean
-	@ConditionalOnRequestedDependency("docker-compose")
-	ComposeFileCustomizer rabbitComposeFileCustomizer(DockerServiceResolver serviceResolver) {
-		return (composeFile) -> serviceResolver.doWith("rabbit",
-				(service) -> composeFile.services()
-					.add("rabbitmq",
-							service.andThen((builder) -> builder.environment("RABBITMQ_DEFAULT_USER", "myuser")
-								.environment("RABBITMQ_DEFAULT_PASS", "secret")
-								.ports(5672))));
+		@Bean
+		SpringRabbitStreamsBuildCustomizer springRabbitStreamsBuildCustomizer() {
+			return new SpringRabbitStreamsBuildCustomizer();
+		}
+
 	}
 
 }

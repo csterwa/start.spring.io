@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,19 @@
 
 package io.spring.start.site.extension.dependency.springkafka;
 
-import io.spring.initializr.generator.buildsystem.gradle.GradleBuild;
+import io.spring.initializr.generator.buildsystem.Build;
 import io.spring.initializr.generator.spring.build.BuildCustomizer;
 
 /**
- * {@link BuildCustomizer} for Gradle builds to configure the buildpack builder.
+ * Adds a dependency to Kafka.
  *
  * @author Moritz Halbritter
  */
-class SpringKafkaStreamsGradleBuildCustomizer implements BuildCustomizer<GradleBuild> {
-
-	private static final String BUILDER = "paketobuildpacks/builder-jammy-base:latest";
-
-	private final char quote;
-
-	SpringKafkaStreamsGradleBuildCustomizer(char quote) {
-		this.quote = quote;
-	}
+class SpringKafkaStreamsBuildCustomizer implements BuildCustomizer<Build> {
 
 	@Override
-	public void customize(GradleBuild build) {
-		build.tasks()
-			.customize("bootBuildImage",
-					(bootBuildImage) -> bootBuildImage.attribute("builder", this.quote + BUILDER + this.quote));
+	public void customize(Build build) {
+		build.dependencies().add("kafka");
 	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class VaadinMavenBuildCustomizerTests extends AbstractExtensionTests {
 
+	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.V3_5;
+
 	@Test
 	void shouldAddProductionProfile() {
-		ProjectRequest projectRequest = createProjectRequest(SupportedBootVersion.latest(), "vaadin", "web");
+		ProjectRequest projectRequest = createProjectRequest(BOOT_VERSION, "vaadin", "web");
 		assertThat(mavenPom(projectRequest)).hasProfile("production").lines().containsSequence(
 		// @formatter:off
 			"		<profile>",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ class VaadinProjectGenerationConfiguration {
 
 	@Bean
 	@ConditionalOnBuildSystem(MavenBuildSystem.ID)
-	VaadinMavenBuildCustomizer vaadinMavenBuildCustomizer() {
-		return new VaadinMavenBuildCustomizer();
+	VaadinMavenBuildCustomizer vaadinMavenBuildCustomizer(ProjectDescription description) {
+		return new VaadinMavenBuildCustomizer(description.getPlatformVersion());
 	}
 
 	@Bean

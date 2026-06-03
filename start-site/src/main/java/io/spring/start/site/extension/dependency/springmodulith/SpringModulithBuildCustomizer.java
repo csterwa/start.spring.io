@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,14 @@ import io.spring.initializr.generator.spring.build.BuildCustomizer;
  *
  * @author Oliver Drotbohm
  * @author Stephane Nicoll
+ * @author Eddú Meléndez
  */
 class SpringModulithBuildCustomizer implements BuildCustomizer<Build> {
 
 	private static final Collection<String> OBSERVABILITY_DEPENDENCIES = List.of("actuator", "datadog", "graphite",
 			"influx", "new-relic", "otlp-metrics", "prometheus", "wavefront", "zipkin");
 
-	private static final Collection<String> PERSISTENCE = List.of("jdbc", "jpa", "mongodb");
+	private static final Collection<String> PERSISTENCE = List.of("jdbc", "jpa", "mongodb", "neo4j");
 
 	private static final Collection<String> BROKERS = List.of("activemq", "amqp", "artemis", "kafka");
 
@@ -48,6 +49,9 @@ class SpringModulithBuildCustomizer implements BuildCustomizer<Build> {
 		DependencyContainer dependencies = build.dependencies();
 		if (dependencies.has("actuator")) {
 			dependencies.add("modulith-actuator", modulithDependency("actuator").scope(DependencyScope.RUNTIME));
+		}
+		if (dependencies.has("flyway")) {
+			dependencies.add("modulith-runtime", modulithDependency("runtime").scope(DependencyScope.RUNTIME));
 		}
 		if (OBSERVABILITY_DEPENDENCIES.stream().anyMatch(dependencies::has)) {
 			dependencies.add("modulith-observability",

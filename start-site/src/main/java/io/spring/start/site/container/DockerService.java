@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package io.spring.start.site.container;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
 import io.spring.initializr.generator.container.docker.compose.ComposeService;
+import io.spring.initializr.generator.container.docker.compose.PortMapping;
 
 /**
  * Description of a Docker service.
@@ -40,14 +39,14 @@ public final class DockerService implements Consumer<ComposeService.Builder> {
 
 	private final String command;
 
-	private final int[] ports;
+	private final Set<PortMapping> ports;
 
 	private DockerService(Builder builder) {
 		this.image = builder.image;
 		this.imageTag = builder.imageTag;
 		this.website = builder.website;
 		this.command = builder.command;
-		this.ports = builder.ports.stream().mapToInt(Integer::intValue).toArray();
+		this.ports = new TreeSet<>(builder.ports);
 	}
 
 	/**
@@ -93,10 +92,10 @@ public final class DockerService implements Consumer<ComposeService.Builder> {
 	}
 
 	/**
-	 * Return the ports that should be exposed by the service.
-	 * @return the ports to expose
+	 * Return the ports for the service.
+	 * @return the ports
 	 */
-	public int[] getPorts() {
+	public Set<PortMapping> getPorts() {
 		return this.ports;
 	}
 
@@ -106,7 +105,7 @@ public final class DockerService implements Consumer<ComposeService.Builder> {
 			.imageTag(this.imageTag)
 			.imageWebsite(this.website)
 			.command(this.command)
-			.ports(this.ports);
+			.portMappings(this.ports);
 	}
 
 	/**
@@ -122,12 +121,13 @@ public final class DockerService implements Consumer<ComposeService.Builder> {
 
 		private String command;
 
-		private final Set<Integer> ports = new TreeSet<>();
+		private final Set<PortMapping> ports = new TreeSet<>();
 
 		protected Builder(String imageAndTag) {
 			String[] split = imageAndTag.split(":", 2);
 			String tag = (split.length == 1) ? "latest" : split[1];
-			image(split[0]).imageTag(tag);
+			this.image = split[0];
+			this.imageTag = tag;
 		}
 
 		public Builder image(String image) {
@@ -150,13 +150,28 @@ public final class DockerService implements Consumer<ComposeService.Builder> {
 			return this;
 		}
 
-		public Builder ports(Collection<Integer> ports) {
-			this.ports.addAll(ports);
+		public Builder fixedPort(int hostPort, int containerPort) {
+			this.ports.add(PortMapping.fixed(hostPort, containerPort));
 			return this;
 		}
 
-		public Builder ports(int... ports) {
-			return ports(Arrays.stream(ports).boxed().toList());
+		public Builder randomPort(int containerPort) {
+			this.ports.add(PortMapping.random(containerPort));
+			return this;
+		}
+
+		public Builder randomPorts(int... ports) {
+			for (int port : ports) {
+				randomPort(port);
+			}
+			return this;
+		}
+
+		public Builder randomPorts(Iterable<Integer> ports) {
+			for (Integer port : ports) {
+				randomPort(port);
+			}
+			return this;
 		}
 
 		/**

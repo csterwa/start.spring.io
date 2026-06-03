@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.spring.start.site.extension.dependency.activemq;
 
 import io.spring.initializr.generator.test.project.ProjectStructure;
 import io.spring.initializr.web.project.ProjectRequest;
+import io.spring.start.site.SupportedBootVersion;
 import io.spring.start.site.extension.AbstractExtensionTests;
 import org.junit.jupiter.api.Test;
 
@@ -41,8 +42,20 @@ class ArtemisProjectGenerationConfigurationTests extends AbstractExtensionTests 
 
 	@Test
 	void dockerComposeCreatesAppropriateService() {
-		ProjectRequest request = createProjectRequest("docker-compose", "artemis");
+		ProjectRequest request = createProjectRequest(SupportedBootVersion.V3_5, "docker-compose", "artemis");
 		assertThat(composeFile(request)).hasSameContentAs(new ClassPathResource("compose/artemis.yaml"));
+	}
+
+	@Test
+	void dockerComposeCreatesApacheArtemisWhenUsingBoot40() {
+		ProjectRequest request = createProjectRequest(SupportedBootVersion.V4_0, "docker-compose", "artemis");
+		assertThat(composeFile(request)).hasSameContentAs(new ClassPathResource("compose/apache-artemis.yaml"));
+	}
+
+	@Test
+	void dockerComposeCreatesApacheArtemisWhenUsingBoot41() {
+		ProjectRequest request = createProjectRequest(SupportedBootVersion.V4_1, "docker-compose", "artemis");
+		assertThat(composeFile(request)).hasSameContentAs(new ClassPathResource("compose/apache-artemis.yaml"));
 	}
 
 }

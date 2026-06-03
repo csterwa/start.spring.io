@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.spring.start.site.extension.dependency.springai;
 
 import io.spring.initializr.generator.test.project.ProjectStructure;
 import io.spring.initializr.web.project.ProjectRequest;
+import io.spring.start.site.SupportedBootVersion;
 import io.spring.start.site.extension.AbstractExtensionTests;
 import org.junit.jupiter.api.Test;
 
@@ -32,16 +33,19 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SpringAiMongoDbAtlasProjectGenerationConfigurationTests extends AbstractExtensionTests {
 
+	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.V3_5;
+
 	@Test
 	void doesNothingWithoutDockerCompose() {
-		ProjectRequest request = createProjectRequest("web", "spring-ai-vectordb-mongodb-atlas");
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, "web", "spring-ai-vectordb-mongodb-atlas");
 		ProjectStructure structure = generateProject(request);
 		assertThat(structure.getProjectDirectory().resolve("compose.yaml")).doesNotExist();
 	}
 
 	@Test
 	void createsMongoDbAtlasService() {
-		ProjectRequest request = createProjectRequest("docker-compose", "spring-ai-vectordb-mongodb-atlas");
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, "docker-compose",
+				"spring-ai-vectordb-mongodb-atlas");
 		assertThat(composeFile(request)).hasSameContentAs(new ClassPathResource("compose/mongodb-atlas.yaml"));
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import io.spring.initializr.generator.spring.scm.git.GitIgnoreCustomizer;
 import org.springframework.context.annotation.Bean;
 
 /**
- * {@link ProjectGenerationConfiguration} for JTE.
+ * {@link ProjectGenerationConfiguration} for jte.
  *
  * @author Moritz Halbritter
  */
@@ -54,7 +54,7 @@ class JteProjectGenerationConfiguration {
 
 	@Bean
 	GitIgnoreCustomizer jteGitIgnoreCustomizer() {
-		return (gitignore) -> gitignore.addSectionIfAbsent("JTE").add("/jte-classes/");
+		return (gitignore) -> gitignore.addSectionIfAbsent("jte").add("/jte-classes/");
 	}
 
 	@Bean

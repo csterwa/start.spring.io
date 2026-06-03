@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.spring.start.site.extension.dependency.graphql;
 
+import io.spring.initializr.generator.condition.ConditionalOnPlatformVersion;
 import io.spring.initializr.generator.condition.ConditionalOnRequestedDependency;
 
 import org.springframework.context.annotation.Bean;
@@ -36,6 +37,7 @@ class SpringGraphQlProjectGenerationConfiguration {
 	}
 
 	@Bean
+	@ConditionalOnPlatformVersion("[3.5.0,4.0.0-RC1)")
 	SpringGraphQlBuildCustomizer SpringGraphQlBuildCustomizer() {
 		return new SpringGraphQlBuildCustomizer();
 	}

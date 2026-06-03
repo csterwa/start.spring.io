@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,16 +41,17 @@ import io.spring.start.site.container.ServiceConnections.ServiceConnection;
  * @param <S> language-specific source code
  * @author Stephane Nicoll
  * @author Moritz Halbritter
+ * @author Kaique Vieira Soares
  */
 abstract class TestContainersApplicationCodeProjectContributor<T extends TypeDeclaration, C extends CompilationUnit<T>, S extends SourceCode<T, C>>
 		implements ProjectContributor {
 
-	public static final ClassName TEST_CONFIGURATION_CLASS_NAME = ClassName
+	private static final ClassName TEST_CONFIGURATION_CLASS_NAME = ClassName
 		.of("org.springframework.boot.test.context.TestConfiguration");
 
-	public static final ClassName BEAN_CLASS_NAME = ClassName.of("org.springframework.context.annotation.Bean");
+	private static final ClassName BEAN_CLASS_NAME = ClassName.of("org.springframework.context.annotation.Bean");
 
-	public static final ClassName SERVICE_CONNECTION_CLASS_NAME = ClassName
+	private static final ClassName SERVICE_CONNECTION_CLASS_NAME = ClassName
 		.of("org.springframework.boot.testcontainers.service.connection.ServiceConnection");
 
 	private static final ClassName DOCKER_IMAGE_NAME_CLASS_NAME = ClassName
@@ -101,7 +102,7 @@ abstract class TestContainersApplicationCodeProjectContributor<T extends TypeDec
 		T testcontainersConfiguration = testcontainersConfigurationUnit
 			.createTypeDeclaration(TESTCONTAINERS_CONFIGURATION_CLASS_NAME.getSimpleName());
 		testcontainersConfiguration.annotations()
-			.add(TEST_CONFIGURATION_CLASS_NAME, (annotation) -> annotation.set("proxyBeanMethods", false));
+			.addSingle(TEST_CONFIGURATION_CLASS_NAME, (annotation) -> annotation.set("proxyBeanMethods", false));
 		this.serviceConnections.values()
 			.forEach((serviceConnection) -> configureServiceConnection(testcontainersConfiguration, serviceConnection));
 	}
@@ -121,13 +122,16 @@ abstract class TestContainersApplicationCodeProjectContributor<T extends TypeDec
 		});
 	}
 
-	protected void annotateContainerMethod(Annotatable annotable, String name) {
-		annotable.annotations().add(BEAN_CLASS_NAME);
-		annotable.annotations().add(SERVICE_CONNECTION_CLASS_NAME, (annotation) -> {
-			if (name != null) {
-				annotation.set("name", name);
+	protected void annotateContainerMethod(Annotatable annotable, ServiceConnection serviceConnection) {
+		annotable.annotations().addSingle(BEAN_CLASS_NAME);
+		annotable.annotations().addSingle(SERVICE_CONNECTION_CLASS_NAME, (annotation) -> {
+			if (serviceConnection.connectionName() != null) {
+				annotation.set("name", serviceConnection.connectionName());
 			}
 		});
+		for (ServiceConnections.AnnotationRequest request : serviceConnection.annotations()) {
+			annotable.annotations().addSingle(request.className(), request.customizer());
+		}
 	}
 
 	private String getTestApplicationName() {

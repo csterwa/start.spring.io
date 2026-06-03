@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import get from 'lodash/get'
-import React, { useContext, useRef, useState, useEffect } from 'react'
+import React, {useContext, useEffect, useRef, useState} from 'react'
 
 import Actions from './Actions'
 import Control from './Control'
@@ -9,10 +9,10 @@ import FieldInput from './FieldInput'
 import FieldRadio from './FieldRadio'
 import Warnings from './Warnings'
 import useWindowsUtils from '../../utils/WindowsUtils'
-import { AppContext } from '../../reducer/App'
-import { Button, Radio } from '../form'
-import { Dependency } from '../dependency'
-import { InitializrContext } from '../../reducer/Initializr'
+import {AppContext} from '../../reducer/App'
+import {Button, Radio} from '../form'
+import {Dependency} from '../dependency'
+import {InitializrContext} from '../../reducer/Initializr'
 
 function Fields({
   onSubmit,
@@ -126,22 +126,6 @@ function Fields({
                 }}
               />
               <FieldInput
-                id='input-name'
-                value={get(values, 'meta.name')}
-                text='Name'
-                onChange={event => {
-                  update({ meta: { name: event.target.value } })
-                }}
-              />
-              <FieldInput
-                id='input-description'
-                value={get(values, 'meta.description')}
-                text='Description'
-                onChange={event => {
-                  update({ meta: { description: event.target.value } })
-                }}
-              />
-              <FieldInput
                 id='input-packageName'
                 value={get(values, 'meta.packageName')}
                 text='Package name'
@@ -156,6 +140,15 @@ function Fields({
                 options={get(config, 'lists.meta.packaging')}
                 onChange={value => {
                   update({ meta: { packaging: value } })
+                }}
+              />
+              <FieldRadio
+                id='input-configurationFileFormat'
+                value={get(values, 'meta.configurationFileFormat')}
+                text='Configuration'
+                options={get(config, 'lists.meta.configurationFileFormat')}
+                onChange={value => {
+                  update({ meta: { configurationFileFormat: value } })
                 }}
               />
               <FieldRadio
@@ -203,9 +196,9 @@ function Fields({
         <span className='dropdown' ref={wrapper}>
           <Button
             className={`last-child ${dropdown ? 'clicked' : ''}`}
-            id='favorite-add'
+            id='more-button'
             onClick={() => {
-              setDropdown(true)
+              setDropdown(prev => !prev)
             }}
           >
             ...

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,7 @@ final class DependencyResolver {
 
 	private final RepositorySystem repositorySystem;
 
+	@SuppressWarnings("deprecation")
 	DependencyResolver(Path localRepositoryLocation) {
 		try {
 			ServiceLocator serviceLocator = createServiceLocator();
@@ -93,15 +94,14 @@ final class DependencyResolver {
 		}
 	}
 
-	private static RepositoryPolicy repositoryPolicy(boolean enabled) {
-		return new RepositoryPolicy(enabled, RepositoryPolicy.UPDATE_POLICY_NEVER,
-				RepositoryPolicy.CHECKSUM_POLICY_IGNORE);
+	private static RepositoryPolicy repositoryPolicy(boolean enabled, String updatePolicy) {
+		return new RepositoryPolicy(enabled, updatePolicy, RepositoryPolicy.CHECKSUM_POLICY_IGNORE);
 	}
 
 	static RemoteRepository createRemoteRepository(String id, String url, boolean snapshot) {
 		Builder repositoryBuilder = new Builder(id, "default", url);
-		repositoryBuilder.setSnapshotPolicy(repositoryPolicy(snapshot));
-		repositoryBuilder.setReleasePolicy(repositoryPolicy(!snapshot));
+		repositoryBuilder.setSnapshotPolicy(repositoryPolicy(snapshot, RepositoryPolicy.UPDATE_POLICY_ALWAYS));
+		repositoryBuilder.setReleasePolicy(repositoryPolicy(!snapshot, RepositoryPolicy.UPDATE_POLICY_NEVER));
 		return repositoryBuilder.build();
 	}
 
@@ -168,6 +168,7 @@ final class DependencyResolver {
 		return null;
 	}
 
+	@SuppressWarnings("deprecation")
 	private static ServiceLocator createServiceLocator() {
 		DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
 		locator.addService(RepositorySystem.class, DefaultRepositorySystem.class);

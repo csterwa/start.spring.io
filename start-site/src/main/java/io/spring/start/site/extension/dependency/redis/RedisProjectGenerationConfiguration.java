@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Configuration;
  * Configuration for generation of projects that depend on Redis.
  *
  * @author Moritz Halbritter
+ * @author Eddú Meléndez
  */
 @Configuration(proxyBeanMethods = false)
 class RedisProjectGenerationConfiguration {
@@ -56,7 +57,8 @@ class RedisProjectGenerationConfiguration {
 	}
 
 	private boolean isRedisEnabled(Build build) {
-		return (build.dependencies().has("data-redis") || build.dependencies().has("data-redis-reactive"));
+		return (build.dependencies().has("data-redis") || build.dependencies().has("data-redis-reactive")
+				|| build.dependencies().has("session-data-redis"));
 	}
 
 }

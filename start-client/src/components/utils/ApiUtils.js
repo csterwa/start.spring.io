@@ -3,18 +3,17 @@ import querystring from 'querystring'
 import set from 'lodash/set'
 
 import Extend from '../../Extend.json'
-import { isInRange, parseReleases, parseVersion } from './Version'
+import {isInRange, parseReleases, parseVersion} from './Version'
 
 const PROPERTIES_MAPPING_URL = {
   type: 'project',
   language: 'language',
   platformVersion: 'boot',
   packaging: 'meta.packaging',
+  configurationFileFormat: 'meta.configurationFileFormat',
   jvmVersion: 'meta.java',
   groupId: 'meta.group',
   artifactId: 'meta.artifact',
-  name: 'meta.name',
-  description: 'meta.description',
   packageName: 'meta.packageName',
   dependencies: 'dependencies',
 }
@@ -24,7 +23,7 @@ export const getInfo = function getInfo(url) {
     fetch(`${url}`, {
       method: 'GET',
       headers: {
-        Accept: 'application/vnd.initializr.v2.2+json',
+        Accept: 'application/vnd.initializr.v2.3+json',
       },
     })
       .then(
@@ -82,6 +81,7 @@ export const parseParams = (values, queryParams, lists) => {
           case 'project':
           case 'language':
           case 'meta.packaging':
+          case 'meta.configurationFileFormat':
           case 'meta.java': {
             const list = get(lists, key, [])
             const res = list.find(a => a.key.toLowerCase() === value)
@@ -228,6 +228,10 @@ export const getLists = json => {
         key: `${packaging.id}`,
         text: `${packaging.name}`,
       })),
+      configurationFileFormat: get(json, 'configurationFileFormat.values', []).map(configurationFileFormat => ({
+        key: `${configurationFileFormat.id}`,
+        text: `${configurationFileFormat.name}`,
+      })),
     },
     dependencies: deps,
   }
@@ -239,13 +243,12 @@ export const getDefaultValues = json => {
     language: get(json, 'language.default'),
     boot: get(json, 'bootVersion.default'),
     meta: {
-      name: get(json, 'name.default'),
       group: get(json, 'groupId.default'),
       artifact: get(json, 'artifactId.default'),
-      description: get(json, 'description.default'),
       packaging: get(json, 'packaging.default'),
       packageName: get(json, 'packageName.default'),
       java: get(json, 'javaVersion.default'),
+      configurationFileFormat: get(json, 'configurationFileFormat.default'),
     },
     dependencies: [],
   }
@@ -276,11 +279,10 @@ export const getProject = function getProject(url, values, config) {
       baseDir: get(values, 'meta.artifact'),
       groupId: get(values, 'meta.group'),
       artifactId: get(values, 'meta.artifact'),
-      name: get(values, 'meta.name'),
-      description: get(values, 'meta.description'),
       packageName: get(values, 'meta.packageName'),
       packaging: get(values, 'meta.packaging'),
       javaVersion: get(values, 'meta.java'),
+      configurationFileFormat: get(values, 'meta.configurationFileFormat'),
     })
     let paramsDependencies = get(values, 'dependencies', [])
       .map(dependency => {

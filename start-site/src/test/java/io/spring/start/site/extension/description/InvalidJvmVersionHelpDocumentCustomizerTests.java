@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.spring.start.site.extension.description;
 import io.spring.initializr.generator.language.kotlin.KotlinLanguage;
 import io.spring.initializr.generator.test.io.TextAssert;
 import io.spring.initializr.web.project.ProjectRequest;
+import io.spring.start.site.SupportedBootVersion;
 import io.spring.start.site.extension.AbstractExtensionTests;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +41,7 @@ class InvalidJvmVersionHelpDocumentCustomizerTests extends AbstractExtensionTest
 
 	@Test
 	void warningAddedWithUnsupportedKotlinVersion() {
-		ProjectRequest request = createProjectRequest("web");
+		ProjectRequest request = createProjectRequest(SupportedBootVersion.V3_5, "web");
 		request.setJavaVersion("22");
 		request.setLanguage(KotlinLanguage.ID);
 		assertHelpDocument(request).lines()

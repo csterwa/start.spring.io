@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2025 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,18 @@ package io.spring.start.site.extension.dependency.springgrpc;
 import io.spring.initializr.generator.buildsystem.gradle.GradleBuildSystem;
 import io.spring.initializr.generator.buildsystem.maven.MavenBuildSystem;
 import io.spring.initializr.generator.condition.ConditionalOnBuildSystem;
+import io.spring.initializr.generator.condition.ConditionalOnPlatformVersion;
 import io.spring.initializr.generator.condition.ConditionalOnRequestedDependency;
 import io.spring.initializr.generator.project.ProjectDescription;
 import io.spring.initializr.generator.project.ProjectGenerationConfiguration;
 import io.spring.initializr.metadata.InitializrMetadata;
 import io.spring.initializr.versionresolver.MavenVersionResolver;
+import io.spring.start.site.extension.dependency.springgrpc.SpringGrpcProjectGenerationConfiguration.SpringGrpcCondition;
 
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * Configuration for generation of projects that depend on Spring gRPC.
@@ -33,54 +38,112 @@ import org.springframework.context.annotation.Bean;
  * @author Moritz Halbritter
  */
 @ProjectGenerationConfiguration
-@ConditionalOnRequestedDependency("spring-grpc")
+@Conditional(SpringGrpcCondition.class)
 class SpringGrpcProjectGenerationConfiguration {
-
-	@Bean
-	GrpcVersionResolver grpcVersionResolver(ProjectDescription description, InitializrMetadata metadata,
-			MavenVersionResolver versionResolver) {
-		String springGrpcVersion = metadata.getConfiguration()
-			.getEnv()
-			.getBoms()
-			.get("spring-grpc")
-			.resolve(description.getPlatformVersion())
-			.getVersion();
-		return new GrpcVersionResolver(versionResolver, springGrpcVersion);
-	}
-
-	@Bean
-	GrpcAdditionalDependenciesBuildCustomizer grpcAdditionalDependenciesBuildCustomizer() {
-		return new GrpcAdditionalDependenciesBuildCustomizer();
-	}
-
-	@Bean
-	@ConditionalOnBuildSystem(value = GradleBuildSystem.ID, dialect = GradleBuildSystem.DIALECT_GROOVY)
-	GrpcGradleGroovyBuildCustomizer grpcGradleGroovyBuildCustomizer() {
-		return new GrpcGradleGroovyBuildCustomizer();
-	}
-
-	@Bean
-	@ConditionalOnBuildSystem(value = GradleBuildSystem.ID, dialect = GradleBuildSystem.DIALECT_KOTLIN)
-	GrpcGradleKotlinBuildCustomizer grpcGradleKotlinBuildCustomizer() {
-		return new GrpcGradleKotlinBuildCustomizer();
-	}
-
-	@Bean
-	@ConditionalOnBuildSystem(MavenBuildSystem.ID)
-	GrpcMavenBuildCustomizer grpcMavenBuildCustomizer(GrpcVersionResolver versionResolver) {
-		return new GrpcMavenBuildCustomizer(versionResolver.resolveProtobufJavaVersion(),
-				versionResolver.resolveGrpcVersion());
-	}
 
 	@Bean
 	GrpcProjectContributor grpcProjectContributor() {
 		return new GrpcProjectContributor();
 	}
 
-	@Bean
-	@ConditionalOnRequestedDependency("web")
-	GrpcWebMvcBuildCustomizer grpcMvcBuildCustomizer() {
-		return new GrpcWebMvcBuildCustomizer();
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnPlatformVersion("4.1.0-M1")
+	static class BootBuiltInSupport {
+
+		private static final String GRPC_PLUGIN_VERSION = "0.9.6";
+
+		@Bean
+		@ConditionalOnBuildSystem(value = GradleBuildSystem.ID, dialect = GradleBuildSystem.DIALECT_GROOVY)
+		GrpcGradleGroovyBuildCustomizer grpcGradleGroovyBuildCustomizer() {
+			return new GrpcGradleGroovyBuildCustomizer(GRPC_PLUGIN_VERSION);
+		}
+
+		@Bean
+		@ConditionalOnBuildSystem(value = GradleBuildSystem.ID, dialect = GradleBuildSystem.DIALECT_KOTLIN)
+		GrpcGradleKotlinBuildCustomizer grpcGradleKotlinBuildCustomizer() {
+			return new GrpcGradleKotlinBuildCustomizer(GRPC_PLUGIN_VERSION);
+		}
+
+		@Bean
+		@ConditionalOnBuildSystem(MavenBuildSystem.ID)
+		GrpcMavenBuildCustomizer grpcMavenBuildCustomizer() {
+			return new GrpcMavenBuildCustomizer();
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnPlatformVersion("[3.5.0,4.1.0-M1)")
+	static class LegacyGrpcSupport {
+
+		private static final String GRPC_PLUGIN_VERSION = "0.9.5";
+
+		@Bean
+		GrpcAdditionalDependenciesBuildCustomizer grpcAdditionalDependenciesBuildCustomizer() {
+			return new GrpcAdditionalDependenciesBuildCustomizer();
+		}
+
+		@Bean
+		@ConditionalOnBuildSystem(value = GradleBuildSystem.ID, dialect = GradleBuildSystem.DIALECT_GROOVY)
+		LegacyGrpcGradleGroovyBuildCustomizer legacyGrpcGradleGroovyBuildCustomizer() {
+			return new LegacyGrpcGradleGroovyBuildCustomizer(GRPC_PLUGIN_VERSION);
+		}
+
+		@Bean
+		@ConditionalOnBuildSystem(value = GradleBuildSystem.ID, dialect = GradleBuildSystem.DIALECT_KOTLIN)
+		LegacyGrpcGradleKotlinBuildCustomizer legacyGrpcGradleKotlinBuildCustomizer() {
+			return new LegacyGrpcGradleKotlinBuildCustomizer(GRPC_PLUGIN_VERSION);
+		}
+
+		@Bean
+		@ConditionalOnBuildSystem(MavenBuildSystem.ID)
+		LegacyGrpcMavenBuildCustomizer legacyGrpcMavenBuildCustomizer(GrpcVersionResolver grpcVersionResolver) {
+			return new LegacyGrpcMavenBuildCustomizer(grpcVersionResolver.resolveProtobufJavaVersion(),
+					grpcVersionResolver.resolveGrpcVersion());
+		}
+
+		@Bean
+		GrpcVersionResolver grpcVersionResolver(ProjectDescription description, InitializrMetadata metadata,
+				MavenVersionResolver versionResolver) {
+			String springGrpcVersion = metadata.getConfiguration()
+				.getEnv()
+				.getBoms()
+				.get("spring-grpc")
+				.resolve(description.getPlatformVersion())
+				.getVersion();
+			return new GrpcVersionResolver(versionResolver, springGrpcVersion);
+		}
+
+		@Configuration(proxyBeanMethods = false)
+		@ConditionalOnRequestedDependency("spring-grpc-server")
+		static class GrpcServerConfiguration {
+
+			@Bean
+			@ConditionalOnRequestedDependency("web")
+			GrpcServerWebMvcBuildCustomizer grpcMvcBuildCustomizer() {
+				return new GrpcServerWebMvcBuildCustomizer();
+			}
+
+		}
+
+	}
+
+	static class SpringGrpcCondition extends AnyNestedCondition {
+
+		SpringGrpcCondition() {
+			super(ConfigurationPhase.PARSE_CONFIGURATION);
+		}
+
+		@ConditionalOnRequestedDependency("spring-grpc-server")
+		static class SpringGrpcServer {
+
+		}
+
+		@ConditionalOnRequestedDependency("spring-grpc-client")
+		static class SpringGrpcClient {
+
+		}
+
 	}
 
 }

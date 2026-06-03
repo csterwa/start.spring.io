@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensionTests {
 
+	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.V3_5;
+
 	@Test
 	void buildWithOnlyTestContainers() {
-		assertThat(generateProject("testcontainers")).mavenBuild().hasDependency(getDependency("testcontainers"));
+		assertThat(generateProject("testcontainers")).mavenBuild()
+			.hasDependency(getDependency(BOOT_VERSION, "testcontainers"));
 	}
 
 	@ParameterizedTest
@@ -57,7 +60,7 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 			.hasDependency(getDependency(springBootDependencyId)
 				.resolve(Version.parse(SupportedBootVersion.latest().getVersion())))
 			.hasDependency("org.testcontainers", testcontainersArtifactId, null, "test")
-			.hasDependency(getDependency("testcontainers"));
+			.hasDependency(getDependency(BOOT_VERSION, "testcontainers"));
 	}
 
 	@ParameterizedTest
@@ -69,7 +72,18 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 			.hasDependency(getDependency(springBootDependencyId)
 				.resolve(Version.parse(SupportedBootVersion.latest().getVersion())))
 			.hasDependency("org.testcontainers", testcontainersArtifactId, null, "test")
-			.hasDependency(getDependency("testcontainers"));
+			.hasDependency(getDependency(BOOT_VERSION, "testcontainers"));
+	}
+
+	@Test
+	void buildWithSpringBootAndTestcontainersSpringAi2Module() {
+		String springBootDependencyId = "spring-ai-chat-memory-repository-redis";
+		SupportedBootVersion bootVersion = SupportedBootVersion.V4_0;
+		assertThat(generateProject(bootVersion, "testcontainers", springBootDependencyId)).mavenBuild()
+			.doesNotHaveBom("org.testcontainers", "testcontainers-bom")
+			.hasDependency(getDependency(springBootDependencyId)
+				.resolve(Version.parse(SupportedBootVersion.latest().getVersion())))
+			.hasDependency(getDependency(bootVersion, "testcontainers"));
 	}
 
 	static Stream<Arguments> supportedTestcontainersActiveMQEntriesBuild() {
@@ -77,10 +91,15 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 	}
 
 	static Stream<Arguments> supportedTestcontainersSpringAiEntriesBuild() {
-		return Stream.of(Arguments.arguments("spring-ai-vectordb-chroma", "chromadb"),
+		return Stream.of(Arguments.arguments("spring-ai-chat-memory-repository-cassandra", "cassandra"),
+				Arguments.arguments("spring-ai-chat-memory-repository-mongodb", "mongodb"),
+				Arguments.arguments("spring-ai-chat-memory-repository-neo4j", "neo4j"),
+				Arguments.arguments("spring-ai-vectordb-chroma", "chromadb"),
+				Arguments.arguments("spring-ai-vectordb-mariadb", "mariadb"),
 				Arguments.arguments("spring-ai-vectordb-milvus", "milvus"),
 				Arguments.arguments("spring-ai-vectordb-mongodb-atlas", "mongodb"),
 				Arguments.arguments("spring-ai-vectordb-qdrant", "qdrant"),
+				Arguments.arguments("spring-ai-vectordb-typesense", "typesense"),
 				Arguments.arguments("spring-ai-vectordb-weaviate", "weaviate"));
 	}
 
@@ -113,6 +132,8 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 				Arguments.arguments("data-mongodb", "https://java.testcontainers.org/modules/databases/mongodb/"),
 				Arguments.arguments("data-mongodb-reactive",
 						"https://java.testcontainers.org/modules/databases/mongodb/"),
+				Arguments.arguments("session-data-mongodb",
+						"https://java.testcontainers.org/modules/databases/mongodb/"),
 				Arguments.arguments("data-neo4j", "https://java.testcontainers.org/modules/databases/neo4j/"),
 				Arguments.arguments("data-r2dbc", "https://java.testcontainers.org/modules/databases/r2dbc/"),
 				Arguments.arguments("db2", "https://java.testcontainers.org/modules/databases/db2"),
@@ -128,6 +149,28 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 				Arguments.arguments("sqlserver", "https://java.testcontainers.org/modules/databases/mssqlserver/"));
 	}
 
+	@ParameterizedTest
+	@MethodSource("supportedEntriesHelpDocumentBoot4")
+	void linkToSupportedEntriesWhenTestContainerIsPresentIsAddedBoot4(String dependencyId, String docHref) {
+		ProjectRequest request = createProjectRequest(SupportedBootVersion.V4_0, "testcontainers", dependencyId);
+		assertThat(helpDocument(request)).contains(docHref);
+	}
+
+	@ParameterizedTest
+	@MethodSource("supportedEntriesHelpDocumentBoot4")
+	void linkToSupportedEntriesWhenTestContainerIsNotPresentIsNotAddedBoot4(String dependencyId, String docHref) {
+		ProjectRequest request = createProjectRequest(SupportedBootVersion.V4_0, dependencyId);
+		assertThat(helpDocument(request)).doesNotContain(docHref);
+	}
+
+	static Stream<Arguments> supportedEntriesHelpDocumentBoot4() {
+		return Stream.of(
+				Arguments.arguments("cassandra", "https://java.testcontainers.org/modules/databases/cassandra/"),
+				Arguments.arguments("elasticsearch", "https://java.testcontainers.org/modules/elasticsearch/"),
+				Arguments.arguments("mongodb", "https://java.testcontainers.org/modules/databases/mongodb/"),
+				Arguments.arguments("neo4j", "https://java.testcontainers.org/modules/databases/neo4j/"));
+	}
+
 	@Test
 	void linkToSupportedEntriesWhenTwoMatchesArePresentOnlyAddLinkOnce() {
 		assertHelpDocument("testcontainers", "data-mongodb", "data-mongodb-reactive")
@@ -138,7 +181,7 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 	void buildWithSpringBoot31DoesNotIncludeBom() {
 		assertThat(generateProject("testcontainers")).mavenBuild()
 			.doesNotHaveBom("org.testcontainers", "testcontainers-bom")
-			.hasDependency(getDependency("testcontainers"));
+			.hasDependency(getDependency(BOOT_VERSION, "testcontainers"));
 	}
 
 	@Test
@@ -260,7 +303,7 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 					import org.springframework.boot.test.context.TestConfiguration
 					import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 					import org.springframework.context.annotation.Bean
-					import org.testcontainers.containers.CassandraContainer
+					import org.testcontainers.cassandra.CassandraContainer
 					import org.testcontainers.utility.DockerImageName
 
 					@TestConfiguration(proxyBeanMethods = false)
@@ -269,7 +312,7 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 						@Bean
 						@ServiceConnection
 						CassandraContainer cassandraContainer() {
-							new CassandraContainer<>(DockerImageName.parse("cassandra:latest"))
+							new CassandraContainer(DockerImageName.parse("cassandra:latest"))
 						}
 
 					}
@@ -321,7 +364,7 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 					import org.springframework.boot.test.context.TestConfiguration;
 					import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 					import org.springframework.context.annotation.Bean;
-					import org.testcontainers.containers.CassandraContainer;
+					import org.testcontainers.cassandra.CassandraContainer;
 					import org.testcontainers.utility.DockerImageName;
 
 					@TestConfiguration(proxyBeanMethods = false)
@@ -329,8 +372,8 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 
 						@Bean
 						@ServiceConnection
-						CassandraContainer<?> cassandraContainer() {
-							return new CassandraContainer<>(DockerImageName.parse("cassandra:latest"));
+						CassandraContainer cassandraContainer() {
+							return new CassandraContainer(DockerImageName.parse("cassandra:latest"));
 						}
 
 					}
@@ -379,7 +422,7 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 					import org.springframework.boot.test.context.TestConfiguration
 					import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 					import org.springframework.context.annotation.Bean
-					import org.testcontainers.containers.CassandraContainer
+					import org.testcontainers.cassandra.CassandraContainer
 					import org.testcontainers.utility.DockerImageName
 
 					@TestConfiguration(proxyBeanMethods = false)
@@ -387,7 +430,7 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 
 						@Bean
 						@ServiceConnection
-						fun cassandraContainer(): CassandraContainer<*> {
+						fun cassandraContainer(): CassandraContainer {
 							return CassandraContainer(DockerImageName.parse("cassandra:latest"))
 						}
 
@@ -416,21 +459,25 @@ class TestcontainersProjectGenerationConfigurationTests extends AbstractExtensio
 	@Test
 	void shouldAddHelpSection() {
 		assertHelpDocument("testcontainers", "data-mongodb", "postgresql").contains(
-				"https://docs.spring.io/spring-boot/3.4.0/reference/testing/testcontainers.html#testing.testcontainers")
+				"https://docs.spring.io/spring-boot/3.5.0/reference/testing/testcontainers.html#testing.testcontainers")
 			.contains(
-					"https://docs.spring.io/spring-boot/3.4.0/reference/features/dev-services.html#features.dev-services.testcontainers")
+					"https://docs.spring.io/spring-boot/3.5.0/reference/features/dev-services.html#features.dev-services.testcontainers")
 			.contains("mongo:latest")
 			.contains("postgres:latest");
 	}
 
 	private ProjectStructure generateProject(String... dependencies) {
-		ProjectRequest request = createProjectRequest(SupportedBootVersion.latest(), dependencies);
+		return generateProject(BOOT_VERSION, dependencies);
+	}
+
+	private ProjectStructure generateProject(SupportedBootVersion bootVersion, String... dependencies) {
+		ProjectRequest request = createProjectRequest(bootVersion, dependencies);
 		request.setType("maven-build");
 		return generateProject(request);
 	}
 
 	private TextAssert assertHelpDocument(String... dependencyIds) {
-		ProjectRequest request = createProjectRequest(SupportedBootVersion.latest(), dependencyIds);
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, dependencyIds);
 		return assertThat(helpDocument(request));
 	}
 

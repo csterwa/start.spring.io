@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,9 @@ import io.spring.start.site.container.ComposeFileCustomizer;
 import io.spring.start.site.container.DockerServiceResolver;
 import io.spring.start.site.container.ServiceConnections;
 import io.spring.start.site.container.ServiceConnectionsCustomizer;
+import io.spring.start.site.container.Testcontainers;
+import io.spring.start.site.container.Testcontainers.Container;
+import io.spring.start.site.container.Testcontainers.SupportedContainer;
 import io.spring.start.site.extension.dependency.springpulsar.SpringPulsarProjectGenerationConfiguration.OnPulsarDependencyCondition;
 
 import org.springframework.context.annotation.Bean;
@@ -43,14 +46,14 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 @Conditional(OnPulsarDependencyCondition.class)
 class SpringPulsarProjectGenerationConfiguration {
 
-	private static final String TESTCONTAINERS_CLASS_NAME = "org.testcontainers.containers.PulsarContainer";
-
 	@Bean
 	@ConditionalOnRequestedDependency("testcontainers")
-	ServiceConnectionsCustomizer pulsarServiceConnectionsCustomizer(DockerServiceResolver serviceResolver) {
+	ServiceConnectionsCustomizer pulsarServiceConnectionsCustomizer(DockerServiceResolver serviceResolver,
+			Testcontainers testcontainers) {
+		Container container = testcontainers.getContainer(SupportedContainer.PULSAR);
 		return (serviceConnections) -> serviceResolver.doWith("pulsar",
 				(service) -> serviceConnections.addServiceConnection(ServiceConnections.ServiceConnection
-					.ofContainer("pulsar", service, TESTCONTAINERS_CLASS_NAME, false)));
+					.ofContainer("pulsar", service, container.className(), container.generic())));
 	}
 
 	@Bean

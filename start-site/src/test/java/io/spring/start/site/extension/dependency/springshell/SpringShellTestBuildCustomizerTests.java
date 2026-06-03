@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,10 +49,9 @@ class SpringShellTestBuildCustomizerTests extends AbstractExtensionTests {
 
 	@Test
 	void shellTestIsNotAddedWithoutSpringShell() {
-		ProjectRequest request = createProjectRequest("web");
-		assertThat(mavenPom(request)).hasDependency(Dependency.createSpringBootStarter("web"))
-			.hasDependency(Dependency.createSpringBootStarter("test", Dependency.SCOPE_TEST))
-			.hasDependenciesSize(2);
+		ProjectRequest request = createProjectRequest(BOOT_VERSION, "web");
+		Dependency dependency = springShellStarterTest();
+		assertThat(mavenPom(request)).doesNotHaveDependency(dependency.getGroupId(), dependency.getArtifactId());
 	}
 
 	private static Dependency springShellStarterTest() {

@@ -1,3 +1,5 @@
+@use 'sass:color';
+@use 'variables' as *;
 body.dark {
   background: $dark-background;
   color: $dark-color;
@@ -33,8 +35,7 @@ body.dark {
     background: $dark-background;
   }
   .colset-main {
-    background: linear-gradient($dark-border, $dark-border) no-repeat center/1px
-      100%;
+    background: linear-gradient($dark-border, $dark-border) no-repeat center/1px 100%;
   }
   hr.divider,
   .dependency-header {
@@ -172,7 +173,7 @@ body.dark {
       color: rgba($dark-color, 0.5);
     }
     span.group {
-      color: lighten($dark-background, 0.6);
+      color: color.adjust($dark-background, $lightness: 0.6%);
     }
   }
   ul.dependencies-list li div.disabled strong {
@@ -361,7 +362,7 @@ body.dark {
   a.button,
   button.button {
     &:focus {
-      box-shadow: 0 0 0 4px lighten($dark-border, 4);
+      box-shadow: 0 0 0 4px color.adjust($dark-border, $lightness: 4%);
     }
   }
 
@@ -394,7 +395,7 @@ body.dark {
     color: $dark-color;
   }
   .dialog-dependencies ul li a.dependency.added:hover {
-    background: darken(#145374, 5%);
+    background: color.adjust(#145374, $lightness: -5%);
     color: $dark-color;
   }
   .dialog-dependencies ul li a.dependency.added:hover strong {
@@ -410,7 +411,7 @@ body.dark {
     background: $dark-primary;
   }
   .dialog-dependencies ul li a.dependency.added.selected {
-    background: darken(#145374, 5%);
+    background: color.adjust(#145374, $lightness: -5%);
     color: $dark-color;
   }
   .dialog-dependencies ul li a.dependency.selected span.group {
@@ -459,7 +460,8 @@ body.dark {
   }
   .modal-favorite button.edit,
   .modal-favorite button.remove,
-  .modal-share .modal-content button.favorite {
+  .modal-share .modal-content button.favorite,
+  .modal-share .modal-content button.edit {
     color: white;
   }
   .actions .button.clicked {
@@ -469,11 +471,27 @@ body.dark {
     background: $dark-background-secondary;
     color: $dark-color;
     &:hover {
-      background: lighten($dark-background-secondary, 2);
+      background: color.adjust($dark-background-secondary, $lightness: 2%);
     }
   }
   .modal-action {
     background: $dark-background;
     border-top: 1px solid $dark-border;
+  }
+
+  .modal-content .list .item.editing {
+    background: $dark-background-secondary;
+
+    input.input {
+      background: $dark-background-secondary;
+    }
+
+    button {
+      color: white;
+
+      &.cancel .icon-time .st0 {
+        stroke: white;
+      }
+    }
   }
 }

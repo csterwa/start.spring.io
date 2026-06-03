@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import io.spring.initializr.generator.spring.documentation.HelpDocument;
 import io.spring.initializr.generator.spring.documentation.HelpDocumentCustomizer;
 
 /**
- * {@link HelpDocumentCustomizer} to add a JTE section.
+ * {@link HelpDocumentCustomizer} to add a jte section.
  *
  * @author Moritz Halbritter
  */

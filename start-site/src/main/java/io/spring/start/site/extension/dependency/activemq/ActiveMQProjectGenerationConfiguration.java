@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,17 @@
 package io.spring.start.site.extension.dependency.activemq;
 
 import io.spring.initializr.generator.condition.ConditionalOnRequestedDependency;
+import io.spring.initializr.generator.project.ProjectDescription;
 import io.spring.initializr.generator.project.ProjectGenerationConfiguration;
+import io.spring.initializr.generator.version.VersionParser;
+import io.spring.initializr.generator.version.VersionRange;
 import io.spring.start.site.container.ComposeFileCustomizer;
 import io.spring.start.site.container.DockerServiceResolver;
 import io.spring.start.site.container.ServiceConnections.ServiceConnection;
 import io.spring.start.site.container.ServiceConnectionsCustomizer;
+import io.spring.start.site.container.Testcontainers;
+import io.spring.start.site.container.Testcontainers.Container;
+import io.spring.start.site.container.Testcontainers.SupportedContainer;
 
 import org.springframework.context.annotation.Bean;
 
@@ -29,26 +35,39 @@ import org.springframework.context.annotation.Bean;
  * Configuration for generation of projects that depend on ActiveMQ.
  *
  * @author Stephane Nicoll
+ * @author Eddú Meléndez
  */
 @ProjectGenerationConfiguration
 @ConditionalOnRequestedDependency("activemq")
 public class ActiveMQProjectGenerationConfiguration {
 
-	private static final String TESTCONTAINERS_CLASS_NAME = "org.testcontainers.activemq.ActiveMQContainer";
+	private static final VersionRange SPRING_BOOT_4_OR_LATER = VersionParser.DEFAULT.parseRange("4.0.3");
+
+	private final boolean isSpringBoot4OrLater;
+
+	ActiveMQProjectGenerationConfiguration(ProjectDescription projectDescription) {
+		this.isSpringBoot4OrLater = SPRING_BOOT_4_OR_LATER.match(projectDescription.getPlatformVersion());
+	}
 
 	@Bean
 	@ConditionalOnRequestedDependency("testcontainers")
-	ServiceConnectionsCustomizer activeMQClassicServiceConnectionsCustomizer(DockerServiceResolver serviceResolver) {
-		return (serviceConnections) -> serviceResolver.doWith("activeMQClassic",
-				(service) -> serviceConnections.addServiceConnection(
-						ServiceConnection.ofContainer("activemq", service, TESTCONTAINERS_CLASS_NAME, false)));
+	ServiceConnectionsCustomizer activeMQClassicServiceConnectionsCustomizer(DockerServiceResolver serviceResolver,
+			Testcontainers testcontainers) {
+		Container container = testcontainers.getContainer(SupportedContainer.ACTIVEMQ);
+		return (serviceConnections) -> serviceResolver
+			.doWith(getId(), (service) -> serviceConnections.addServiceConnection(
+					ServiceConnection.ofContainer("activemq", service, container.className(), container.generic())));
 	}
 
 	@Bean
 	@ConditionalOnRequestedDependency("docker-compose")
 	ComposeFileCustomizer activeMQClassicComposeFileCustomizer(DockerServiceResolver serviceResolver) {
-		return (composeFile) -> serviceResolver.doWith("activeMQClassic",
+		return (composeFile) -> serviceResolver.doWith(getId(),
 				(service) -> composeFile.services().add("activemq", service));
+	}
+
+	private String getId() {
+		return this.isSpringBoot4OrLater ? "apacheActiveMQ" : "activeMQClassic";
 	}
 
 }

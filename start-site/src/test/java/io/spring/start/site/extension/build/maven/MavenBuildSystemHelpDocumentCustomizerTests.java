@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.spring.start.site.extension.build.maven;
 
 import io.spring.initializr.web.project.ProjectRequest;
+import io.spring.start.site.SupportedBootVersion;
 import io.spring.start.site.extension.AbstractExtensionTests;
 import org.assertj.core.api.ListAssert;
 import org.junit.jupiter.api.Test;
@@ -32,12 +33,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class MavenBuildSystemHelpDocumentCustomizerTests extends AbstractExtensionTests {
 
+	private static final SupportedBootVersion BOOT_VERSION = SupportedBootVersion.latest();
+
 	@Test
 	void linksAddedToHelpDocumentForMavenBuild() {
 		assertHelpDocument("maven-build").contains(
 				"* [Official Apache Maven documentation](https://maven.apache.org/guides/index.html)",
-				"* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/3.4.0/maven-plugin)",
-				"* [Create an OCI image](https://docs.spring.io/spring-boot/3.4.0/maven-plugin/build-image.html)");
+				"* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/%s/maven-plugin)"
+					.formatted(BOOT_VERSION.getVersion()),
+				"* [Create an OCI image](https://docs.spring.io/spring-boot/%s/maven-plugin/build-image.html)"
+					.formatted(BOOT_VERSION.getVersion()));
 	}
 
 	@Test

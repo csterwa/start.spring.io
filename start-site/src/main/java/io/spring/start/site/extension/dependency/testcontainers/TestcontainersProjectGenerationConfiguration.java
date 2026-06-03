@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import io.spring.initializr.generator.project.ProjectGenerationConfiguration;
 import io.spring.initializr.generator.spring.build.BuildCustomizer;
 import io.spring.start.site.container.ServiceConnections;
 import io.spring.start.site.container.ServiceConnectionsCustomizer;
+import io.spring.start.site.container.Testcontainers;
 import io.spring.start.site.support.implicit.ImplicitDependency;
 import io.spring.start.site.support.implicit.ImplicitDependencyBuildCustomizer;
 import io.spring.start.site.support.implicit.ImplicitDependencyHelpDocumentCustomizer;
@@ -51,8 +52,16 @@ public class TestcontainersProjectGenerationConfiguration {
 
 	private final Iterable<ImplicitDependency> dependencies;
 
+	private final Testcontainers testcontainers;
+
 	public TestcontainersProjectGenerationConfiguration(ProjectDescription projectDescription) {
-		this.dependencies = TestcontainersModuleRegistry.create(projectDescription.getPlatformVersion());
+		this.testcontainers = new Testcontainers(projectDescription.getPlatformVersion());
+		this.dependencies = TestcontainersModuleRegistry.create(this.testcontainers);
+	}
+
+	@Bean
+	Testcontainers testcontainers() {
+		return this.testcontainers;
 	}
 
 	@Bean

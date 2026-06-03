@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.spring.start.site.extension.dependency.observability;
 
 import io.spring.initializr.generator.test.project.ProjectStructure;
 import io.spring.initializr.web.project.ProjectRequest;
+import io.spring.start.site.SupportedBootVersion;
 import io.spring.start.site.extension.AbstractExtensionTests;
 import org.junit.jupiter.api.Test;
 
@@ -32,25 +33,25 @@ class ObservabilityProjectGenerationConfigurationTests extends AbstractExtension
 
 	@Test
 	void zipkinAddsDistributedTracingIfNecessary() {
-		assertThat(generateProject("zipkin")).mavenBuild()
+		assertThat(generateProject(SupportedBootVersion.latest(), "zipkin")).mavenBuild()
 			.hasDependency(getDependency("zipkin"))
 			.hasDependency(getDependency("distributed-tracing"));
 	}
 
 	@Test
 	void wavefrontDoesNotAddDistributedTracingByDefault() {
-		assertThat(generateProject("wavefront")).mavenBuild()
+		assertThat(generateProject(SupportedBootVersion.V3_5, "wavefront")).mavenBuild()
 			.doesNotHaveDependency("io.micrometer", "micrometer-tracing-reporter-wavefront");
 	}
 
 	@Test
 	void wavefrontWithDistributedTracingConfigureReport() {
-		assertThat(generateProject("wavefront", "distributed-tracing")).mavenBuild()
+		assertThat(generateProject(SupportedBootVersion.V3_5, "wavefront", "distributed-tracing")).mavenBuild()
 			.hasDependency("io.micrometer", "micrometer-tracing-reporter-wavefront", null, "runtime");
 	}
 
-	private ProjectStructure generateProject(String... dependencies) {
-		ProjectRequest request = createProjectRequest(dependencies);
+	private ProjectStructure generateProject(SupportedBootVersion bootVersion, String... dependencies) {
+		ProjectRequest request = createProjectRequest(bootVersion, dependencies);
 		request.setType("maven-build");
 		return generateProject(request);
 	}

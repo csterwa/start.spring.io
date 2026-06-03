@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012 - present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package io.spring.start.site.extension.dependency.testcontainers;
 
-import java.util.Arrays;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.spring.initializr.generator.container.docker.compose.PortMapping;
 import io.spring.initializr.generator.io.IndentingWriterFactory;
 import io.spring.initializr.generator.language.CodeBlock;
 import io.spring.initializr.generator.language.Parameter;
@@ -31,6 +32,7 @@ import io.spring.initializr.generator.project.ProjectDescription;
 import io.spring.start.site.container.DockerService;
 import io.spring.start.site.container.ServiceConnections;
 import io.spring.start.site.container.ServiceConnections.ServiceConnection;
+import io.spring.start.site.container.Testcontainers;
 import org.codehaus.plexus.util.StringUtils;
 
 import org.springframework.util.ClassUtils;
@@ -39,6 +41,7 @@ import org.springframework.util.ClassUtils;
  * {@link TestContainersApplicationCodeProjectContributor} implementation for Kotlin.
  *
  * @author Stephane Nicoll
+ * @author Kaique Vieira Soares
  */
 class KotlinTestContainersApplicationCodeProjectContributor extends
 		TestContainersApplicationCodeProjectContributor<KotlinTypeDeclaration, KotlinCompilationUnit, KotlinSourceCode> {
@@ -67,35 +70,38 @@ class KotlinTestContainersApplicationCodeProjectContributor extends
 		DockerService dockerService = serviceConnection.dockerService();
 		String imageId = "%s:%s".formatted(dockerService.getImage(), dockerService.getImageTag());
 		if (serviceConnection.isGenericContainer()) {
-			typeDeclaration.addFunctionDeclaration(usingGenericContainer(methodName, imageId,
-					serviceConnection.connectionName(), dockerService.getPorts()));
+			typeDeclaration.addFunctionDeclaration(
+					usingGenericContainer(methodName, imageId, serviceConnection, dockerService.getPorts()));
 		}
 		else {
-			typeDeclaration.addFunctionDeclaration(usingSpecificContainer(methodName, imageId,
-					serviceConnection.containerClassName(), serviceConnection.containerClassNameGeneric()));
+			typeDeclaration.addFunctionDeclaration(usingSpecificContainer(methodName, imageId, serviceConnection));
 		}
 	}
 
-	private KotlinFunctionDeclaration usingGenericContainer(String functionName, String imageId, String connectionName,
-			int... ports) {
-		String portsParameter = Arrays.stream(ports).mapToObj(String::valueOf).collect(Collectors.joining(", "));
+	private KotlinFunctionDeclaration usingGenericContainer(String functionName, String imageId,
+			ServiceConnection serviceConnection, Set<PortMapping> ports) {
+		String portsParameter = ports.stream()
+			.map((port) -> String.valueOf(port.getContainerPort()))
+			.collect(Collectors.joining(", "));
 		KotlinFunctionDeclaration method = KotlinFunctionDeclaration.function(functionName)
 			.returning("GenericContainer<*>")
 			.body(CodeBlock.ofStatement("return $T($L).withExposedPorts($L)",
-					"org.testcontainers.containers.GenericContainer", generatedDockerImageNameCode(imageId),
+					Testcontainers.GENERIC_CONTAINER_CLASS_NAME, generatedDockerImageNameCode(imageId),
 					portsParameter));
-		annotateContainerMethod(method, connectionName);
+		annotateContainerMethod(method, serviceConnection);
 		return method;
 	}
 
 	private KotlinFunctionDeclaration usingSpecificContainer(String functionName, String imageId,
-			String containerClassName, boolean containerClassNameGeneric) {
-		String returnType = (containerClassNameGeneric) ? ClassUtils.getShortName(containerClassName) + "<*>"
-				: containerClassName;
+			ServiceConnection serviceConnection) {
+		String returnType = (serviceConnection.containerClassNameGeneric())
+				? ClassUtils.getShortName(serviceConnection.containerClassName()) + "<*>"
+				: serviceConnection.containerClassName();
 		KotlinFunctionDeclaration method = KotlinFunctionDeclaration.function(functionName)
 			.returning(returnType)
-			.body(CodeBlock.ofStatement("return $T($L)", containerClassName, generatedDockerImageNameCode(imageId)));
-		annotateContainerMethod(method, null);
+			.body(CodeBlock.ofStatement("return $T($L)", serviceConnection.containerClassName(),
+					generatedDockerImageNameCode(imageId)));
+		annotateContainerMethod(method, serviceConnection);
 		return method;
 	}
 
